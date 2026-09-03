@@ -1,0 +1,179 @@
+﻿<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Documentação - Nettuno B2B SaaS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .docs-section { margin-bottom: 36px; }
+    .docs-section h2 { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 12px; }
+    .docs-section p { font-size: 14px; color: var(--fg-dim); line-height: 1.6; margin-bottom: 14px; }
+    .docs-section ul { margin-left: 20px; margin-bottom: 14px; color: var(--fg-dim); font-size: 14px; }
+    .docs-section li { margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+  <div class="atmos"></div>
+
+  <div class="dash-app">
+    <div id="sidebar-slot"></div>
+
+    <main class="dash-main">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Documentação Técnica</h1>
+          <p class="page-sub">Guia de integração da Risk API V1 e do Nettuno Shield SDK em menos de 10 minutos.</p>
+        </div>
+      </div>
+
+      <!-- Quickstart -->
+      <section class="docs-section">
+        <h2>1. Início Rápido (10 Minutos)</h2>
+        <p>
+          O Nettuno fornece uma infraestrutura unificada de avaliação de risco e selos de confiança comunitários. O SDK frontend renderiza o Shield usando o design system nativo do vosso marketplace sem conflitos visuais.
+        </p>
+
+        <pre class="code-box">
+&lt;!-- Carregar o SDK Vanilla JS (Zero dependências) --&gt;
+&lt;script src="https://nettuno-e6036.web.app/sdk/nettuno.js"&gt;&lt;/script&gt;
+
+&lt;script&gt;
+  // 1. Inicializar cliente
+  const nt = Nettuno.create({ apiKey: 'nt_live_...' });
+
+  // 2. Obter o Shield do anúncio (0 créditos — leitura rápida/cache)
+  const shield = await nt.getShield('anuncio_olx_12345');
+
+  // 3. Montar o Escudo no anúncio (adapta-se ao CSS do vosso site).
+  //    Clicável por omissão: abre o painel completo (voto + partilha +
+  //    abas SINAIS/CONTACTO/INTERAÇÃO/RESULTADO) — o mesmo da extensão Nettuno.
+  nt.mountShield(document.getElementById('shield-container'), shield);
+&lt;/script&gt;</pre>
+        <p>
+          O Shield, o cache, a votação e o reporte de sinais da comunidade são <strong>gratuitos</strong>.
+          Apenas <code>requestAnalysis(listingId, listingData)</code> consome 1 Risk Unit, e só quando
+          explicitamente pedido — ver secção "Modelo de Consumo" abaixo. Para um widget de voto isolado
+          (sem o painel completo), use <code>nt.mountVotePanel(el, listingId)</code> à parte.
+        </p>
+      </section>
+
+      <!-- Modelo de Consumo -->
+      <section class="docs-section">
+        <h2>1.1 Modelo de Consumo</h2>
+        <ul>
+          <li><code>getShield</code> / <code>batchShield</code> / <code>mountShield</code> — 0 créditos.</li>
+          <li><code>vote</code> / <code>mountVotePanel</code> — 0 créditos.</li>
+          <li><code>requestAnalysis</code> — 1 Risk Unit por chamada, processada de forma assíncrona pelo Risk Engine.</li>
+        </ul>
+        <p>
+          Isto significa que podem colocar o Shield em milhões de anúncios sem gastar créditos: os créditos só são debitados quando pedem explicitamente uma Análise Profunda.
+        </p>
+      </section>
+
+      <!-- Arquitetura Segura -->
+      <section class="docs-section">
+        <h2>2. Arquitetura de Segurança Recomendada</h2>
+        <div class="alert-warning">
+          <span>🔒</span>
+          <div>
+            <strong>Recomendação de Produção:</strong> Nunca exponha a sua chave <code>nt_live_...</code> em código JavaScript público no navegador.
+          </div>
+        </div>
+        <p>
+          O fluxo corporativo seguro consiste em chamar a Risk API a partir do vosso backend ou servidor Next.js/Node/Python, e passar apenas o objeto de resultado para o navegador renderizar o Shield:
+        </p>
+        <pre class="code-box">
+[ Navegador ] ───► [ Backend Marketplace ] ───► [ Nettuno Risk API V1 ]
+                        (nt_live_secreto)            (Cálculo & Quota)
+                              │
+                    Objeto de Risco Sanitizado
+                              │
+                              ▼
+                     [ Nettuno Shield SDK ] (Renderiza com vosso CSS)</pre>
+      </section>
+
+      <!-- Classes CSS Públicas -->
+      <section class="docs-section">
+        <h2>3. Classes CSS Públicas & Custom Properties</h2>
+        <p>
+          O SDK emite elementos com classes estáveis e previsíveis para que o vosso time de frontend possa estilizar livremente em CSS:
+        </p>
+        <pre class="code-box">
+/* Estilização via Classes Públicas */
+.nettuno-shield {
+  font-family: var(--font-brand);
+  border-radius: var(--radius-md);
+}
+
+.nettuno-shield--safe {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.nettuno-shield--risk {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+
+/* Ou mapeando variáveis diretamente */
+.nettuno-shield {
+  --nettuno-bg: var(--card-bg);
+  --nettuno-text: var(--text-color);
+  --nettuno-radius: 8px;
+}</pre>
+        <p>
+          O painel completo que abre ao clicar no Shield (voto, partilha, abas de sinais) usa classes
+          <code>as-*</code> estáveis (<code>as-v3-modal</code>, <code>as-brutal-pill</code>,
+          <code>as-like-btn</code>/<code>as-dislike-btn</code>, <code>as-v3-card</code>, <code>as-v3-tab</code>,
+          entre outras) — o mesmo painel usado na extensão Nettuno. Também pode ser estilizado com CSS nativo.
+        </p>
+      </section>
+
+      <!-- Sandbox Testing -->
+      <section class="docs-section">
+        <h2>4. Endpoint de Teste Sandbox & Chaves `nt_test_`</h2>
+        <p>
+          Para desenvolvimento, testes unitários e pipelines de CI/CD sem consumo de créditos reais, utilize uma chave do tipo <code>nt_test_...</code> ou utilize o endpoint de simulação determinística:
+        </p>
+        <pre class="code-box">
+POST https://nettuno-e6036.web.app/v1/test/analyze
+Authorization: Bearer nt_test_...
+Content-Type: application/json
+
+{
+  "listingId": "test_ad_1",
+  "scenario": "RISK" // "SAFE" | "TRUSTED" | "RISK"
+}</pre>
+      </section>
+
+      <!-- Códigos de Erro -->
+      <section class="docs-section">
+        <h2>5. Tabela de Códigos de Resposta HTTP</h2>
+        <pre class="code-box">
+200 OK                  ► Análise processada com sucesso. Headers de quota e cache incluídos.
+401 API_KEY_REVOKED     ► A API key foi revogada pelo utilizador no dashboard.
+401 UNAUTHORIZED        ► Chave ausente ou hash SHA-256 não reconhecido.
+402 QUOTA_EXCEEDED      ► Limite mensal de créditos do plano atingido (hard limit).
+429 RATE_LIMIT_EXCEEDED ► Frequência de requisições excedida (&gt;120 req/min por omissão).</pre>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="_auth.js"></script>
+  <script src="_ui.js"></script>
+
+  <script>
+    renderLayout('docs');
+
+    requireAuth((user, mkt) => {
+      document.getElementById('userName').textContent = mkt.name || 'Marketplace';
+      document.getElementById('userEmail').textContent = user.email;
+    });
+  </script>
+</body>
+</html>

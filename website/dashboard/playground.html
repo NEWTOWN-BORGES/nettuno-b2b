@@ -1,0 +1,268 @@
+﻿<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Playground & Customização CSS - Nettuno B2B SaaS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .playground-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+    }
+    @media (max-width: 1024px) {
+      .playground-grid { grid-template-columns: 1fr; }
+    }
+    .editor-card, .simulator-card {
+      background: var(--bg-card); border: 1px solid var(--card-bd);
+      border-radius: var(--r-md); padding: 24px; display: flex; flex-direction: column; gap: 16px;
+    }
+    .tabs-row {
+      display: flex; gap: 8px; border-bottom: 1px solid var(--card-bd); padding-bottom: 12px;
+    }
+    .tab-btn {
+      background: transparent; border: none; color: var(--muted);
+      font-family: var(--font-main); font-size: 13px; font-weight: 600;
+      padding: 6px 12px; border-radius: var(--r-sm); cursor: pointer; transition: all 0.15s;
+    }
+    .tab-btn.active {
+      background: rgba(42, 111, 240, 0.15); color: var(--neptune-2);
+    }
+    .mock-product {
+      background: #050814; border: 1px solid var(--card-bd-hi);
+      border-radius: var(--r-md); padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .state-chips {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+    }
+    .state-chip {
+      background: rgba(255,255,255,0.05); border: 1px solid var(--card-bd);
+      color: var(--muted); padding: 4px 10px; border-radius: var(--r-sm);
+      font-family: var(--font-mono); font-size: 11px; cursor: pointer; transition: all 0.15s;
+    }
+    .state-chip.active {
+      background: var(--neptune); color: #fff; border-color: var(--neptune-2);
+    }
+  </style>
+</head>
+<body>
+  <div class="atmos"></div>
+
+  <div class="dash-app">
+    <div id="sidebar-slot"></div>
+
+    <main class="dash-main">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Playground & Designer de CSS</h1>
+          <p class="page-sub">Teste e especifique o estilo exato do Shield e do Painel de Votos para combinar 100% com o design do seu Marketplace.</p>
+        </div>
+        <div>
+          <button class="btn-primary" onclick="copyIntegrationCode()">📋 Copiar Código de Integração</button>
+        </div>
+      </div>
+
+      <div class="playground-grid">
+        
+        <!-- ESQUERDA: EDITOR DE ESTILOS -->
+        <div class="editor-card">
+          <div class="panel-title">
+            <span>Configurador do Cliente</span>
+            <span style="font-size:11px; color:var(--muted); font-family:var(--font-mono);">CSS NATIVO / SHADOW DOM</span>
+          </div>
+
+          <div class="tabs-row">
+            <button class="tab-btn active" onclick="switchTab('css')">CSS Personalizado</button>
+            <button class="tab-btn" onclick="switchTab('vars')">Variáveis CSS</button>
+            <button class="tab-btn" onclick="switchTab('labels')">Textos / i18n</button>
+          </div>
+
+          <div id="tabContentCss">
+            <label style="font-family:var(--font-mono); font-size:11px; color:var(--muted); text-transform:uppercase; margin-bottom:6px; display:block;">Estilos CSS para Injeção:</label>
+            <textarea id="cssTextarea" class="inp" style="height:220px; font-family:var(--font-mono); font-size:12px; line-height:1.5;" oninput="renderSimulator()"></textarea>
+          </div>
+
+          <div id="tabContentVars" style="display:none;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <div>
+                <label style="font-family:var(--font-mono); font-size:10px; color:var(--muted); text-transform:uppercase;">--nettuno-bg</label>
+                <input type="text" id="varBg" class="inp" value="#ffffff" oninput="renderSimulator()">
+              </div>
+              <div>
+                <label style="font-family:var(--font-mono); font-size:10px; color:var(--muted); text-transform:uppercase;">--nettuno-radius</label>
+                <input type="text" id="varRadius" class="inp" value="8px" oninput="renderSimulator()">
+              </div>
+            </div>
+          </div>
+
+          <div id="tabContentLabels" style="display:none;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <div>
+                <label style="font-family:var(--font-mono); font-size:10px; color:var(--muted); text-transform:uppercase;">Texto SAFE</label>
+                <input type="text" id="labelSafe" class="inp" value="Seguro" oninput="renderSimulator()">
+              </div>
+              <div>
+                <label style="font-family:var(--font-mono); font-size:10px; color:var(--muted); text-transform:uppercase;">Texto RISK</label>
+                <input type="text" id="labelRisk" class="inp" value="Atenção" oninput="renderSimulator()">
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:20px; display:flex; gap:10px;">
+            <button class="btn-secondary" style="flex:1;" onclick="applyExample('vedix')">Exemplo: Vedix Brutalist</button>
+            <button class="btn-secondary" style="flex:1;" onclick="applyExample('minimal')">Exemplo: Clean Minimal</button>
+          </div>
+        </div>
+
+        <!-- DIREITA: SIMULADOR DE ESTADOS -->
+        <div class="simulator-card">
+          <div class="panel-title">
+            <span>Simulador de Anúncio</span>
+            <span style="font-size:11px; color:var(--cyan); font-family:var(--font-mono);">Live Preview</span>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <div style="font-size:11px; color:var(--muted); margin-bottom:6px; font-family:var(--font-mono);">TESTAR ESTADOS DO SHIELD:</div>
+            <div class="state-chips">
+              <button class="state-chip active" onclick="selectState('SAFE', event)">SAFE</button>
+              <button class="state-chip" onclick="selectState('TRUSTED', event)">TRUSTED</button>
+              <button class="state-chip" onclick="selectState('RISK', event)">RISK</button>
+              <button class="state-chip" onclick="selectState('PENDING', event)">PENDING (Fila)</button>
+              <button class="state-chip" onclick="selectState('ANALYSIS_STALE', event)">STALE (&gt;14d)</button>
+              <button class="state-chip" onclick="selectState('ANALYSIS_UNAVAILABLE', event)">UNAVAILABLE</button>
+            </div>
+          </div>
+
+          <div class="mock-product">
+            <div style="font-size:15px; font-weight:700; color:#fff; margin-bottom:4px;">Apple MacBook Air M2 16GB</div>
+            <div style="font-size:18px; font-weight:800; font-family:var(--font-mono); color:var(--fg); margin-bottom:12px;">940 €</div>
+            
+            <div style="margin-bottom:14px;">
+              <div style="font-size:11px; color:var(--muted); margin-bottom:6px; font-family:var(--font-mono);">ESCUDO RENDERIZADO:</div>
+              <div id="simShieldSlot"></div>
+            </div>
+
+            <div>
+              <div style="font-size:11px; color:var(--muted); margin-bottom:6px; font-family:var(--font-mono);">PAINEL DE VOTOS:</div>
+              <div id="simVoteSlot"></div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <div class="panel-title" style="font-size:12px;"><span>Snippet SDK</span></div>
+            <pre class="code-box" id="simCodeOutput" style="font-size:11px; max-height:140px;"></pre>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="../../../packages/nettuno-sdk/nettuno.js"></script>
+  <script src="_auth.js"></script>
+  <script src="_ui.js"></script>
+
+  <script>
+    renderLayout('playground');
+
+    let currentState = 'SAFE';
+
+    const DEFAULT_CSS = `/* CSS Personalizado do Seu Marketplace */
+.nettuno-shield {
+  font-family: inherit;
+  border-radius: 8px;
+}
+.nettuno-shield--safe { background: #ecfdf5; color: #065f46; border: 1px solid #10b981; }
+.nettuno-shield--trusted { background: #eff6ff; color: #1e40af; border: 1px solid #3b82f6; }
+.nettuno-shield--risk { background: #fff7ed; color: #9a3412; border: 1px solid #f97316; }
+.nettuno-shield--pending { background: #fffbeb; color: #d97706; border: 1px dashed #f59e0b; }`;
+
+    document.getElementById('cssTextarea').value = DEFAULT_CSS;
+
+    function switchTab(t) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      if (event && event.target) event.target.classList.add('active');
+      document.getElementById('tabContentCss').style.display = t === 'css' ? 'block' : 'none';
+      document.getElementById('tabContentVars').style.display = t === 'vars' ? 'block' : 'none';
+      document.getElementById('tabContentLabels').style.display = t === 'labels' ? 'block' : 'none';
+    }
+
+    function selectState(s, evt) {
+      currentState = s;
+      document.querySelectorAll('.state-chip').forEach(c => c.classList.remove('active'));
+      if (evt && evt.target) evt.target.classList.add('active');
+      renderSimulator();
+    }
+
+    function applyExample(type) {
+      if (type === 'vedix') {
+        document.getElementById('cssTextarea').value = `/* Vedix Brutalist Theme */
+.nettuno-shield {
+  border-radius: 0px !important;
+  border: 2px solid #000000 !important;
+  font-family: monospace !important;
+  text-transform: uppercase !important;
+}
+.nettuno-shield--safe { background: #FFB162 !important; color: #000 !important; }
+.nettuno-shield--risk { background: #A35139 !important; color: #fff !important; }
+.nettuno-vote-btn { border-radius: 0px !important; border: 2px solid #000 !important; }`;
+      } else {
+        document.getElementById('cssTextarea').value = `/* Clean Minimal */
+.nettuno-shield {
+  border-radius: 20px !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}`;
+      }
+      renderSimulator();
+    }
+
+    function renderSimulator() {
+      const customCss = document.getElementById('cssTextarea').value;
+      const nt = (typeof Nettuno !== 'undefined') ? Nettuno.create() : null;
+
+      const mockScores = { SAFE: 78, TRUSTED: 94, RISK: 22, PENDING: 50, ANALYSIS_STALE: 60, ANALYSIS_UNAVAILABLE: 50 };
+
+      if (nt) {
+        nt.mountShield(document.getElementById('simShieldSlot'), {
+          state: currentState,
+          score: mockScores[currentState]
+        }, {
+          css: customCss
+        });
+
+        nt.mountVotePanel(document.getElementById('simVoteSlot'), 'ad_demo', {
+          onVote: (t) => showToast('Voto registrado com sucesso!')
+        });
+      } else {
+        document.getElementById('simShieldSlot').innerHTML = `<div class="nettuno-shield" style="padding:8px 12px; background:#ecfdf5; color:#065f46; border:1px solid #10b981; border-radius:8px; display:inline-block; font-weight:700;">✓ Seguro (${mockScores[currentState]})</div>`;
+        document.getElementById('simVoteSlot').innerHTML = `<div style="padding:10px; background:#0f172a; border-radius:8px; font-size:12px; color:#cbd5e1;">Painel de Votos Comunitários</div>`;
+      }
+
+      const snippet = `// 1. Obter Shield com 0 créditos debitados
+const shield = await nt.getShield('anuncio_123');
+
+// 2. Renderizar no DOM com o seu CSS nativo
+nt.mountShield(document.getElementById('slot'), shield, {
+  className: 'meu-shield-custom'
+});`;
+      document.getElementById('simCodeOutput').textContent = snippet;
+    }
+
+    function copyIntegrationCode() {
+      copyToClipboard(document.getElementById('simCodeOutput').textContent, 'Código copiado!');
+    }
+
+    requireAuth((user, mkt) => {
+      document.getElementById('userName').textContent = mkt.name || 'Marketplace';
+      document.getElementById('userEmail').textContent = user.email;
+      renderSimulator();
+    });
+  </script>
+</body>
+</html>

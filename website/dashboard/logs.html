@@ -1,0 +1,230 @@
+﻿<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API Logs & Health - Nettuno B2B SaaS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .logs-table {
+      width: 100%; border-collapse: collapse; font-size: 13px; font-family: var(--font-mono);
+    }
+    .logs-table th {
+      text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--card-bd);
+      color: var(--muted); font-size: 11px; text-transform: uppercase;
+    }
+    .logs-table td {
+      padding: 12px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); color: var(--fg);
+    }
+    .logs-table tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+    .status-pill {
+      font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; display: inline-block;
+    }
+    .status-200 { background: rgba(34, 197, 94, 0.15); color: var(--green); border: 1px solid rgba(34, 197, 94, 0.3); }
+    .status-401, .status-402, .status-429, .status-500 { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
+    
+    .health-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;
+    }
+    .health-card {
+      background: var(--bg-card); border: 1px solid var(--card-bd); border-radius: var(--r-md);
+      padding: 16px 20px; display: flex; align-items: center; gap: 14px;
+    }
+    .health-icon { font-size: 20px; display: flex; align-items: center; justify-content: center; }
+  </style>
+</head>
+<body>
+  <div class="atmos"></div>
+
+  <div class="dash-app">
+    <div id="sidebar-slot"></div>
+
+    <main class="dash-main">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">API Logs & Telemetria</h1>
+          <p class="page-sub">Auditoria de chamadas em tempo real com Request IDs e rastreamento de latência.</p>
+        </div>
+        <button class="btn-secondary" onclick="clearLogsView()">
+          🔄 Atualizar Logs
+        </button>
+      </div>
+
+      <!-- Health Indicators -->
+      <div class="health-grid">
+        <div class="health-card">
+          <div class="health-icon" style="color:var(--green)">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--muted); font-family:var(--font-mono); text-transform:uppercase;">API Gateway</div>
+            <div style="font-size:14px; font-weight:700; color:#fff;">Operacional (100%)</div>
+          </div>
+        </div>
+        <div class="health-card">
+          <div class="health-icon" style="color:var(--cyan)">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--muted); font-family:var(--font-mono); text-transform:uppercase;">Latência Média</div>
+            <div style="font-size:14px; font-weight:700; color:#fff;" id="avgLatency">~32 ms</div>
+          </div>
+        </div>
+        <div class="health-card">
+          <div class="health-icon" style="color:var(--yellow)">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <div>
+            <div style="font-size:11px; color:var(--muted); font-family:var(--font-mono); text-transform:uppercase;">Última Requisição</div>
+            <div style="font-size:14px; font-weight:700; color:#fff;" id="lastReqTime">Nenhuma ainda</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-panel">
+        <div class="panel-title">
+          <span>Stream de Requisições Recentes</span>
+          <span style="font-size:11px; color:var(--muted); font-family:var(--font-mono);">Últimas 50 chamadas</span>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table class="logs-table">
+            <thead>
+              <tr>
+                <th>Data / Hora</th>
+                <th>Request ID</th>
+                <th>Endpoint</th>
+                <th>Status</th>
+                <th>Latência</th>
+                <th>Créditos</th>
+                <th>Modo</th>
+              </tr>
+            </thead>
+            <tbody id="logsTbody">
+              <tr>
+                <td colspan="7" style="text-align:center; padding:32px; color:var(--muted);">
+                  A carregar telemetria em tempo real...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="_auth.js"></script>
+  <script src="_ui.js"></script>
+
+  <script>
+    renderLayout('logs');
+
+    let currentUser = null;
+
+    const sampleDemoLogs = [
+      { timestamp: Date.now() - 15000, requestId: 'req_8f3a9e1c2b', endpoint: '/v1/listings/ad_9281/shield', status: 200, latencyMs: 28, credits: 0, keyType: 'demo' },
+      { timestamp: Date.now() - 42000, requestId: 'req_1d9c4b8a7e', endpoint: '/v1/risk/analyze', status: 200, latencyMs: 45, credits: 1, keyType: 'demo' },
+      { timestamp: Date.now() - 120000, requestId: 'req_5e2f1a9b3c', endpoint: '/v1/listings/ad_4102/shield', status: 200, latencyMs: 22, credits: 0, keyType: 'demo' },
+      { timestamp: Date.now() - 300000, requestId: 'req_7b4c2d9e8a', endpoint: '/v1/votes/cast', status: 200, latencyMs: 31, credits: 0, keyType: 'demo' }
+    ];
+
+    requireAuth((user, mkt) => {
+      currentUser = user;
+      document.getElementById('userName').textContent = mkt.name || 'Marketplace';
+      document.getElementById('userEmail').textContent = user.email;
+      loadLogs();
+    });
+
+    function renderLogsData(logsArray, isDemo) {
+      const existingBanner = document.getElementById('demoDataBanner');
+      if (existingBanner) existingBanner.remove();
+
+      if (isDemo) {
+        const panel = document.querySelector('.card-panel');
+        const banner = document.createElement('div');
+        banner.id = 'demoDataBanner';
+        banner.className = 'alert-warning';
+        banner.innerHTML = '<span style="font-size:18px;">ℹ️</span><div><strong>Dados de demonstração:</strong> ainda não há chamadas reais à API. Estes registos são apenas exemplos ilustrativos.</div>';
+        panel.parentNode.insertBefore(banner, panel);
+      }
+
+      const tbody = document.getElementById('logsTbody');
+      if (!logsArray || logsArray.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align:center; padding:48px 24px; color:var(--muted);">
+              <div style="font-size:24px; margin-bottom:8px;">📊</div>
+              <div>Nenhum registo de API registado ainda.</div>
+              <div style="font-size:11px; margin-top:4px;">As chamadas enviadas com a vossa API Key aparecerão aqui em tempo real.</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      let totalLat = 0;
+      let count = 0;
+
+      tbody.innerHTML = logsArray.map((l, idx) => {
+        if (l.latencyMs) { totalLat += l.latencyMs; count++; }
+        if (idx === 0) {
+          document.getElementById('lastReqTime').textContent = new Date(l.timestamp).toLocaleTimeString('pt-PT');
+        }
+
+        const timeStr = new Date(l.timestamp).toLocaleTimeString('pt-PT') + '.' + String(new Date(l.timestamp).getMilliseconds()).padStart(3, '0');
+        const statusClass = l.status === 200 ? 'status-200' : 'status-401';
+        
+        return `
+          <tr>
+            <td style="color:var(--muted);">${timeStr}</td>
+            <td style="color:var(--cyan);"><span style="cursor:pointer;" onclick="copyToClipboard('${l.requestId}')" title="Copiar Request ID">${l.requestId}</span></td>
+            <td><code>${l.endpoint || '/v1/risk'}</code></td>
+            <td><span class="status-pill ${statusClass}">${l.status}</span></td>
+            <td>${l.latencyMs || 0} ms</td>
+            <td style="font-weight:700;">${l.credits || 0}</td>
+            <td><span style="font-size:10px; opacity:0.8; text-transform:uppercase;">${l.keyType || 'live'}</span></td>
+          </tr>
+        `;
+      }).join('');
+
+      if (count > 0) {
+        document.getElementById('avgLatency').textContent = `~${Math.round(totalLat / count)} ms`;
+      }
+    }
+
+    function loadLogs() {
+      if (!currentUser) return;
+
+      if (db) {
+        db.collection(`marketplaces/${currentUser.uid}/logs`)
+          .orderBy('timestamp', 'desc')
+          .limit(50)
+          .onSnapshot((snap) => {
+            if (snap.empty) {
+              renderLogsData(sampleDemoLogs, true);
+            } else {
+              const logsList = snap.docs.map(doc => doc.data());
+              renderLogsData(logsList, false);
+            }
+          }, (err) => {
+            console.warn('Usando logs de demonstração devido a limite/offline:', err);
+            renderLogsData(sampleDemoLogs, true);
+          });
+      } else {
+        renderLogsData(sampleDemoLogs, true);
+      }
+    }
+
+    function clearLogsView() {
+      loadLogs();
+      showToast('Logs atualizados.');
+    }
+  </script>
+</body>
+</html>

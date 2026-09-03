@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nettuno × Vedix — Integração E2E</title>
+<meta name="description" content="Teste end-to-end da Nettuno Risk API V1 integrada no Vedix Marketplace. Shields e votos reais via o SDK Nettuno canónico (batchShield()).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream:#F7F4EF; --black:#0A0A0A; --mustard:#FFB162; --truffle:#A35139;
+  --oatmeal:#C9C1B1; --safe:#059669; --risk:#B45309; --neutral:#334155;
+  --bw:2.5px; --shadow:4px 4px 0 var(--black); --shadow-sm:3px 3px 0 var(--black);
+  --font:"Space Grotesk",system-ui,sans-serif; --mono:"Space Mono",monospace;
+  --max:1200px; --radius:0px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--cream);color:var(--black);line-height:1.5}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;background:var(--cream);border-bottom:var(--bw) solid var(--black)}
+.nav-in{display:flex;align-items:center;gap:20px;height:68px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px;text-transform:uppercase}
+.logo-mark{width:36px;height:36px;background:var(--mustard);border:var(--bw) solid var(--black);display:grid;place-items:center;box-shadow:var(--shadow-sm)}
+.nettuno-badge-nav{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;border:var(--bw) solid var(--black);padding:6px 12px;background:#fff;box-shadow:var(--shadow-sm)}
+.dot-live{width:8px;height:8px;background:#10b981;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.3)}}
+.nav-right{margin-left:auto;display:flex;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:7px;font-family:var(--font);font-weight:700;font-size:13px;border:var(--bw) solid var(--black);padding:9px 16px;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .1s,box-shadow .1s;text-transform:uppercase;background:#fff}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--black)}
+.btn:active{transform:translate(2px,2px);box-shadow:0 0 0}
+.btn-black{background:var(--black);color:#fff}
+.btn-mustard{background:var(--mustard)}
+
+/* HERO CONFIG */
+.hero{background:var(--black);color:#fff;padding:36px 0 28px;border-bottom:var(--bw) solid var(--black)}
+.hero-label{font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mustard);margin-bottom:10px;letter-spacing:.08em}
+.hero h1{font-size:clamp(22px,3.5vw,38px);font-weight:700;line-height:1.05;text-transform:uppercase;letter-spacing:-.02em;margin-bottom:6px}
+.hero p{font-size:14px;opacity:.65;max-width:560px}
+
+/* CONFIG PANEL */
+.config-bar{background:#111;border-bottom:var(--bw) solid #333;padding:16px 0}
+.config-grid{display:grid;grid-template-columns:1fr 1fr auto auto;gap:12px;align-items:end}
+.fg{display:flex;flex-direction:column;gap:6px}
+.fg label{font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;color:#aaa;letter-spacing:.06em}
+.inp{background:#1c1c1c;border:1.5px solid #333;color:#fff;padding:10px 12px;font-family:var(--mono);font-size:13px;outline:none;width:100%;transition:border-color .15s}
+.inp:focus{border-color:var(--mustard)}
+.inp-key{letter-spacing:.05em}
+.run-btn{background:var(--mustard);color:var(--black);border:var(--bw) solid #000;padding:11px 24px;font-family:var(--mono);font-weight:700;font-size:13px;cursor:pointer;text-transform:uppercase;white-space:nowrap;transition:transform .1s,box-shadow .1s;box-shadow:3px 3px 0 #000}
+.run-btn:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 #000}
+.run-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:3px 3px 0 #000}
+.clr-btn{background:transparent;border:1.5px solid #333;color:#aaa;padding:11px 16px;font-family:var(--mono);font-size:12px;cursor:pointer;text-transform:uppercase}
+.clr-btn:hover{border-color:#666;color:#fff}
+
+/* METRICS BAR */
+.metrics{background:var(--cream);border-bottom:var(--bw) solid var(--black);padding:14px 0}
+.metric-row{display:flex;gap:0}
+.metric{flex:1;padding:10px 16px;border-right:var(--bw) solid var(--black);display:flex;flex-direction:column;gap:3px}
+.metric:last-child{border-right:none}
+.metric-label{font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;color:#777;letter-spacing:.06em}
+.metric-val{font-size:22px;font-weight:700;font-family:var(--mono);transition:color .3s}
+.metric-sub{font-family:var(--mono);font-size:10px;color:#999}
+
+/* MAIN LAYOUT */
+.main{display:grid;grid-template-columns:1fr 360px;gap:0;min-height:600px;border-top:var(--bw) solid var(--black)}
+
+/* LISTINGS */
+.listings-area{padding:24px;border-right:var(--bw) solid var(--black)}
+.area-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:14px;border-bottom:var(--bw) solid var(--black)}
+.area-title{font-family:var(--mono);font-size:13px;font-weight:700;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+.status-chip{font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 10px;border:1.5px solid;text-transform:uppercase}
+.chip-idle{border-color:var(--oatmeal);color:#777}
+.chip-loading{border-color:var(--mustard);color:#92400e;background:#fff7ed}
+.chip-ok{border-color:#059669;color:#047857;background:#ecfdf5}
+.chip-err{border-color:var(--risk);color:var(--risk);background:#fff7ed}
+
+.listings-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:var(--bw) solid var(--black)}
+.listing-card{border-right:var(--bw) solid var(--black);border-bottom:var(--bw) solid var(--black);background:#fff;position:relative;transition:transform .12s;cursor:pointer}
+.listing-card:nth-child(3n){border-right:none}
+.listing-card:hover{transform:translate(-2px,-2px);box-shadow:var(--shadow);z-index:2}
+.card-img{aspect-ratio:1;border-bottom:var(--bw) solid var(--black);overflow:hidden;position:relative;background:repeating-linear-gradient(45deg,#f5f5f0 0 12px,#ece8df 12px 24px)}
+.card-img img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.listing-card:hover .card-img img{transform:scale(1.06)}
+.card-body{padding:12px 14px}
+.card-title{font-size:13px;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-price{font-size:19px;font-weight:700;margin-bottom:8px}
+.card-meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;font-weight:700;border-top:1.5px solid var(--black);padding-top:8px}
+
+/* NETTUNO SHIELD SLOT */
+.shield-slot{padding:0 14px 10px}
+.shield-loading{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;font-weight:700;color:#999;padding:5px 8px;background:#f8f8f8;border:1.5px dashed #ddd}
+.shield-loading-dot{width:6px;height:6px;background:#ccc;border-radius:50%;animation:blink 1s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+
+/* NETTUNO SHIELD — renderizado pelo SDK canónico (Nettuno.mountShield), com o visual
+   brutalista aplicado via SDK theme (ver JS), não reimplementado aqui. Clicar no escudo
+   já abre o painel completo real (voto + partilha + abas SINAIS/CONTACTO/INTERAÇÃO/
+   RESULTADO) — não é preciso montar nenhum painel de voto à parte. */
+.shield-slot{width:100%}
+.shield-slot .nettuno-shield{width:100%;box-sizing:border-box}
+
+/* Feed de sinais AUTOMÁTICOS detetados pelo Risk Engine (shield.signals) — distinto dos
+   sinais REPORTADOS PELA COMUNIDADE (shield.communitySignals), que aparecem na aba
+   SINAIS do painel do escudo. Conteúdo informativo do demo, não é um componente do SDK. */
+.signals-slot{padding:0 14px 14px}
+.signal-row{display:flex;align-items:center;gap:6px;padding:4px 0;font-family:var(--mono);font-size:9.5px}
+.signal-sev{font-weight:900;padding:1px 5px;border:1.5px solid #000;font-size:8px;text-transform:uppercase}
+.signal-sev--HIGH{background:#ef4444;color:#fff}
+.signal-sev--MEDIUM{background:#facc15;color:#000}
+.signal-sev--LOW{background:#e5e7eb;color:#000}
+.signal-empty{padding:6px 0;color:#9ca3af;font-family:var(--mono);font-size:9.5px}
+
+/* LOG PANEL */
+.log-panel{display:flex;flex-direction:column;background:#0f172a}
+.log-head{background:#1e293b;border-bottom:1px solid #334155;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.log-title{font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;color:#94a3b8;letter-spacing:.06em}
+.log-clear{font-family:var(--mono);font-size:10px;background:transparent;border:1px solid #334155;color:#64748b;padding:4px 8px;cursor:pointer;text-transform:uppercase}
+.log-clear:hover{border-color:#94a3b8;color:#94a3b8}
+.log-body{flex:1;overflow-y:auto;padding:8px 0;font-family:var(--mono);font-size:11px;line-height:1.6;scrollbar-width:thin;scrollbar-color:#334155 transparent}
+.log-entry{padding:4px 16px;display:flex;gap:10px;align-items:baseline;border-bottom:1px solid #0f1929}
+.log-entry:hover{background:#1a2540}
+.log-time{color:#475569;flex-shrink:0;font-size:10px}
+.log-tag{font-size:9px;font-weight:700;padding:1px 6px;text-transform:uppercase;flex-shrink:0;border:1px solid}
+.tag-info{color:#60a5fa;border-color:#1d4ed8;background:#1e3a5f}
+.tag-ok{color:#34d399;border-color:#059669;background:#0c3b2e}
+.tag-warn{color:#fbbf24;border-color:#d97706;background:#451a03}
+.tag-err{color:#f87171;border-color:#dc2626;background:#3b0a0a}
+.tag-cache{color:#c084fc;border-color:#7c3aed;background:#2e1065}
+.log-msg{color:#cbd5e1;flex:1;word-break:break-all}
+.log-val{color:#94a3b8;font-size:10px}
+
+/* QUOTA WIDGET */
+.quota-widget{border-top:1px solid #1e293b;padding:14px 16px;flex-shrink:0;background:#0f172a}
+.quota-label{font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;color:#475569;letter-spacing:.06em;margin-bottom:10px;display:flex;justify-content:space-between}
+.quota-bar-bg{background:#1e293b;height:6px;position:relative}
+.quota-bar-fill{background:var(--mustard);height:100%;transition:width .4s ease;max-width:100%}
+.quota-nums{display:flex;justify-content:space-between;margin-top:6px;font-family:var(--mono);font-size:10px;color:#64748b}
+.quota-nums strong{color:#e2e8f0}
+
+/* EMPTY / ERROR STATES */
+.empty-state{grid-column:1/-1;padding:48px 24px;text-align:center;color:#999}
+.empty-icon{font-size:36px;margin-bottom:12px}
+.empty-text{font-family:var(--mono);font-size:13px;font-weight:700;text-transform:uppercase;margin-bottom:6px}
+.empty-sub{font-size:13px;opacity:.6}
+
+/* DIVIDER */
+.section-divider{border:none;border-top:var(--bw) solid var(--black);margin:0}
+
+/* FOOTER */
+footer{border-top:var(--bw) solid var(--black);padding:16px 0;background:var(--cream)}
+.foot-row{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;color:#777}
+.foot-nettuno{display:flex;align-items:center;gap:8px;color:var(--black)}
+
+/* RESPONSIVE */
+@media(max-width:960px){
+  .main{grid-template-columns:1fr}
+  .log-panel{height:420px}
+  .config-grid{grid-template-columns:1fr 1fr}
+  .listings-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:600px){
+  .listings-grid{grid-template-columns:1fr}
+  .listing-card:nth-child(n){border-right:none}
+  .config-grid{grid-template-columns:1fr}
+  .metric-row{flex-wrap:wrap}
+  .metric{flex:0 0 50%;border-bottom:var(--bw) solid var(--black)}
+}
+</style>
+</head>
+<body>
+
+<!-- ░░ NAV ░░ -->
+<header class="nav">
+  <div class="wrap nav-in">
+    <a href="index.html" class="logo">
+      <span class="logo-mark">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.6"><path d="M3 9l1-5h16l1 5M3 9h18M3 9v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9M9 13h6"/></svg>
+      </span>VEDIX
+    </a>
+    <div class="nettuno-badge-nav">
+      <span class="dot-live"></span>
+      NETTUNO RISK API V1
+    </div>
+    <div class="nav-right">
+      <a href="listings.html" class="btn">← Marketplace</a>
+    </div>
+  </div>
+</header>
+
+<!-- ░░ HERO ░░ -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-label">🔬 Integração End-to-End</div>
+    <h1>Vedix × Nettuno Shield</h1>
+    <p>Shield e votação da comunidade em tempo real, via <code>batchShield()</code> — 0 créditos por anúncio. Créditos só são gastos quando pedimos Análise Profunda explícita (<code>requestAnalysis()</code>). A chave nunca aparece no DOM.</p>
+  </div>
+</section>
+
+<!-- ░░ CONFIG ░░ -->
+<div class="config-bar">
+  <div class="wrap">
+    <div class="config-grid">
+      <div class="fg">
+        <label>API URL</label>
+        <input id="apiUrl" class="inp" type="url" value="https://nettuno-e6036.web.app" autocomplete="off">
+      </div>
+      <div class="fg">
+        <label>API Key
+          <label style="font-weight:400;text-transform:none;cursor:pointer;">
+            <input type="checkbox" id="rememberKey" onchange="onRememberToggle()"> lembrar neste dispositivo
+          </label>
+        </label>
+        <div style="display:flex;gap:6px;">
+          <input id="apiKey" class="inp inp-key" type="password" placeholder="nt_live_…" autocomplete="off" spellcheck="false" style="flex:1;" oninput="onKeyInput()">
+          <button type="button" class="clr-btn" id="toggleKeyBtn" onclick="toggleKeyVisibility()" title="Mostrar/esconder chave" style="padding:0 10px;">👁</button>
+        </div>
+      </div>
+      <button id="runBtn" class="run-btn" onclick="runBatch()">
+        ▶ Analisar Anúncios
+      </button>
+      <button class="clr-btn" onclick="clearLog()">
+        ✕ Limpar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ METRICS ░░ -->
+<div class="metrics">
+  <div class="wrap">
+    <div class="metric-row">
+      <div class="metric">
+        <span class="metric-label">Anúncios</span>
+        <span class="metric-val" id="m-ads">—</span>
+        <span class="metric-sub">total na grid</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Créditos usados</span>
+        <span class="metric-val" id="m-credits">—</span>
+        <span class="metric-sub">neste batch</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Quota restante</span>
+        <span class="metric-val" id="m-quota">—</span>
+        <span class="metric-sub">X-Nettuno-Quota-Remaining</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Cache</span>
+        <span class="metric-val" id="m-cache">—</span>
+        <span class="metric-sub">X-Nettuno-Cache</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Rate Limit</span>
+        <span class="metric-val" id="m-rate">—</span>
+        <span class="metric-sub">X-RateLimit-Remaining</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Latência</span>
+        <span class="metric-val" id="m-latency">—</span>
+        <span class="metric-sub">ms (batch total)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ░░ MAIN ░░ -->
+<div class="main">
+
+  <!-- LISTINGS GRID -->
+  <div class="listings-area">
+    <div class="area-head">
+      <span class="area-title">
+        Eletrónica
+        <span class="status-chip chip-idle" id="statusChip">Aguardar análise</span>
+      </span>
+      <span style="font-family:var(--mono);font-size:11px;color:#999">batchShield() → Firestore → Shield</span>
+    </div>
+    <div class="listings-grid" id="listingsGrid">
+      <!-- Gerado pelo JS -->
+    </div>
+  </div>
+
+  <!-- LOG + QUOTA PANEL -->
+  <div class="log-panel">
+    <div class="log-head">
+      <span class="log-title">📡 Nettuno Console</span>
+      <button class="log-clear" onclick="clearLog()">Limpar</button>
+    </div>
+    <div class="log-body" id="logBody"></div>
+    <div class="quota-widget">
+      <div class="quota-label">
+        <span>Quota do Ciclo</span>
+        <span id="quotaPercText">—</span>
+      </div>
+      <div class="quota-bar-bg">
+        <div class="quota-bar-fill" id="quotaBar" style="width:0%"></div>
+      </div>
+      <div class="quota-nums">
+        <span>Usado: <strong id="quotaUsed">—</strong></span>
+        <span>Restante: <strong id="quotaLeft">—</strong></span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="wrap foot-row">
+    <div class="foot-nettuno">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Nettuno Risk API V1 · SDK Open Source
+    </div>
+    <span>Motor de score: Bayesian Beta + Wilson · Privado · Não exposto</span>
+    <span>Vedix Demo © 2026</span>
+  </div>
+</footer>
+
+<!-- ░░ SDK + INTEGRAÇÃO ░░ -->
+<!--
+  Nettuno Shield SDK — o mesmo pacote canónico usado pelo dashboard B2B
+  (packages/nettuno-sdk/nettuno.js), servido a partir da Nettuno Cloud.
+  Este demo NÃO reimplementa mountShield/mountVotePanel: usa o SDK real.
+  A API key passa só em memória. Nunca é escrita em localStorage, cookies ou DOM.
+-->
+<script src="https://nettuno-e6036.web.app/sdk/nettuno.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  VEDIX × NETTUNO — INTEGRAÇÃO E2E
+// ═══════════════════════════════════════════════════════════════
+
+// Dicionário dos códigos reais do Signal Engine (functions/b2b/signalEngine.js) —
+// usado só para o feed informativo de sinais deste demo, não faz parte do SDK.
+const SIGNAL_DICT = {
+  CRITICAL_SUSPICIOUS_TEXT_PATTERNS: { icon: '🚨', label: 'Múltiplos padrões de texto suspeitos' },
+  SUSPICIOUS_CONTACT_OR_PAYMENT_EVASION: { icon: '⚠️', label: 'Contacto/pagamento fora da plataforma' },
+  SUSPICIOUS_KEYWORD_FLAG: { icon: '🔎', label: 'Palavra-chave suspeita detetada' },
+  SEVERE_PRICE_UNDERVALUE: { icon: '💸', label: 'Preço muito abaixo do mercado' },
+  MODERATE_PRICE_UNDERVALUE: { icon: '💰', label: 'Preço abaixo do mercado' },
+  RAPID_NEGATIVE_COMMUNITY_VELOCITY: { icon: '📉', label: 'Pico rápido de votos negativos' },
+  STRONG_NEGATIVE_COMMUNITY_CONSENSUS: { icon: '👎', label: 'Consenso negativo forte da comunidade' },
+  MODERATE_COMMUNITY_CONCERN: { icon: '🤔', label: 'Preocupação moderada da comunidade' },
+};
+
+// Visual brutalista do Vedix aplicado através do SDK real (Nettuno.create({ theme })) —
+// não é um componente novo, é a mesma personalização que o dashboard de Branding gera.
+const VEDIX_THEME = {
+  showScore: true,
+  showPoweredBy: false,
+  borderRadius: '0px',
+  shield: {
+    safe:    { label: 'SEGURO',      icon: '✓', color: '#334155', bg: '#f8fafc', border: '1.5px solid #334155' },
+    trusted: { label: 'CONFIÁVEL',   icon: '⭐', color: '#0A0A0A', bg: '#FFB162', border: '2px solid #0A0A0A' },
+    risk:    { label: 'VERIFICA',    icon: '!', color: '#FFFFFF', bg: '#A35139', border: '2px solid #0A0A0A' },
+    pending: { label: 'A VERIFICAR', icon: '⏳', color: '#92400e', bg: '#fffbeb', border: '1.5px dashed #f59e0b' }
+  },
+  votePanel: {
+    title: 'CONFIRMAÇÃO DA COMUNIDADE',
+    buttonRadius: '0px',
+    positiveLabel: 'PARECE GENUÍNO', positiveIcon: '👍', positiveColor: '#047857', positiveBg: '#ecfdf5', positiveBorder: '1.5px solid #059669',
+    negativeLabel: 'SUSPEITO',       negativeIcon: '⚠', negativeColor: '#b91c1c', negativeBg: '#fef2f2', negativeBorder: '1.5px solid #ef4444'
+  }
+};
+
+function renderSignalsFeed(el, signals) {
+  if (!el) return;
+  if (!signals || !signals.length) {
+    el.innerHTML = `<div class="signal-empty">Sem sinais detetados pelo Signal Engine.</div>`;
+    return;
+  }
+  el.innerHTML = signals.map(s => {
+    const info = SIGNAL_DICT[s.code] || { label: s.code, icon: '▪️' };
+    return `<div class="signal-row">
+      <span>${info.icon}</span>
+      <span style="flex:1;">${info.label}</span>
+      <span class="signal-sev signal-sev--${s.severity}">${s.severity}</span>
+    </div>`;
+  }).join('');
+}
+
+// Dataset simulado — representa o catálogo real do marketplace
+const LISTINGS = [
+  { id:'vedix_iphone15promax_01', t:'iPhone 15 Pro Max 256GB',  p:'880 €', loc:'Lisboa',   cond:'Como novo', r:'5.0', img:'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&q=80' },
+  { id:'vedix_iphone14pro_02',    t:'iPhone 14 Pro 256GB',      p:'680 €', loc:'Porto',    cond:'Como novo', r:'4.9', img:'https://images.unsplash.com/photo-1678685888221-cda773a3dcdb?w=400&q=80' },
+  { id:'vedix_iphone13_03',       t:'iPhone 13 128GB',          p:'470 €', loc:'Braga',    cond:'Bom estado',r:'4.6', img:'https://images.unsplash.com/photo-1632661674596-df8be070a5c5?w=400&q=80' },
+  { id:'vedix_iphone15_04',       t:'iPhone 15 128GB',          p:'710 €', loc:'Lisboa',   cond:'Como novo', r:'4.8', img:'https://images.unsplash.com/photo-1696426136441-a9a64fcaabb4?w=400&q=80' },
+  { id:'vedix_iphone12mini_05',   t:'iPhone 12 Mini 64GB',      p:'290 €', loc:'Coimbra',  cond:'Bom estado',r:'4.4', img:'https://images.unsplash.com/photo-1603891128711-11b4b03bb138?w=400&q=80' },
+  { id:'vedix_iphonese_06',       t:'iPhone SE 2022 64GB',      p:'210 €', loc:'Faro',     cond:'Usado',     r:'4.1', img:'https://images.unsplash.com/photo-1632660168876-27e9e0b61c5e?w=400&q=80' },
+  { id:'vedix_iphone11_07',       t:'iPhone 11 64GB',           p:'240 €', loc:'Évora',    cond:'Bom estado',r:'4.3', img:'https://images.unsplash.com/photo-1574755393849-623942496936?w=400&q=80' },
+  { id:'vedix_iphonexr_08',       t:'iPhone XR 128GB',          p:'180 €', loc:'Setúbal',  cond:'Usado',     r:'3.9', img:'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=400&q=80' },
+  { id:'vedix_macbookair_09',     t:'MacBook Air M2 8GB',       p:'920 €', loc:'Lisboa',   cond:'Como novo', r:'4.7', img:'https://images.unsplash.com/photo-1611186871525-5c45fbe04d12?w=400&q=80' },
+  { id:'vedix_iphone15_susp_10',  t:'iPhone 15 Pro Max URGENTE - motivo de viagem', desc:'Vendo urgente, apenas hoje. Contacte pelo whatsapp +351999999999. Pagamento por MB Way adiantado como sinal.', p:'250 €', loc:'Lisboa', cond:'Como novo', r:'4.5', img:'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&q=80' },
+];
+
+// ─── Estado da app ──────────────────────────────────────────────
+let running = false;
+let totalCreditsUsed = 0;
+
+// ─── Log ─────────────────────────────────────────────────────────
+function log(type, msg, val) {
+  const now = new Date();
+  const ts = now.toLocaleTimeString('pt-PT') + '.' + String(now.getMilliseconds()).padStart(3,'0');
+  const el = document.getElementById('logBody');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  const tagClass = { info:'tag-info', ok:'tag-ok', warn:'tag-warn', err:'tag-err', cache:'tag-cache' };
+  entry.innerHTML =
+    '<span class="log-time">' + ts + '</span>' +
+    '<span class="log-tag ' + (tagClass[type] || 'tag-info') + '">' + type + '</span>' +
+    '<span class="log-msg">' + msg + '</span>' +
+    (val != null ? '<span class="log-val">' + val + '</span>' : '');
+  el.appendChild(entry);
+  el.scrollTop = el.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('logBody').innerHTML = '';
+  log('info', 'Console limpa.');
+}
+
+// ─── Métricas ────────────────────────────────────────────────────
+function setMetric(id, val, color) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = val;
+  el.style.color = color || 'var(--black)';
+}
+
+function updateQuotaBar(used, remaining) {
+  if (remaining == null || remaining === '—') return;
+  const total = (totalCreditsUsed + Number(remaining)) || 1;
+  const pct = Math.min(100, Math.round((totalCreditsUsed / total) * 100));
+  document.getElementById('quotaBar').style.width = pct + '%';
+  document.getElementById('quotaUsed').textContent = totalCreditsUsed;
+  document.getElementById('quotaLeft').textContent = remaining;
+  document.getElementById('quotaPercText').textContent = pct + '%';
+}
+
+function setStatus(label, cls) {
+  const chip = document.getElementById('statusChip');
+  chip.textContent = label;
+  chip.className = 'status-chip ' + cls;
+}
+
+// ─── Render estático da grid (shields em placeholder) ────────────
+function renderGrid() {
+  const grid = document.getElementById('listingsGrid');
+  document.getElementById('m-ads').textContent = LISTINGS.length;
+  grid.innerHTML = LISTINGS.map((it) => `
+    <div class="listing-card" id="card-${it.id}" data-listing-id="${it.id}">
+      <div class="card-img">
+        <img src="${it.img}" alt="${it.t}" loading="lazy">
+      </div>
+      <div class="card-body">
+        <div class="card-title">${it.t}</div>
+        <div class="card-price">${it.p}</div>
+        <div class="card-meta">
+          <span>📍 ${it.loc}</span>
+          <span>★ ${it.r} · ${it.cond}</span>
+        </div>
+      </div>
+      <div class="shield-slot" id="shield-${it.id}">
+        <div class="shield-loading">
+          <span class="shield-loading-dot"></span>
+          aguardar análise…
+        </div>
+      </div>
+      <div class="signals-slot" id="signals-${it.id}"></div>
+    </div>
+  `).join('');
+}
+
+// ─── FUNÇÃO PRINCIPAL: batchShield() + mountShield() real (abre o painel completo) ──
+async function runBatch() {
+  if (running) return;
+
+  const apiUrl = document.getElementById('apiUrl').value.trim();
+  const apiKey = document.getElementById('apiKey').value.trim();
+
+  if (!apiKey || !apiKey.startsWith('nt_live_')) {
+    log('err', 'API key em falta ou formato inválido. Use nt_live_…');
+    return;
+  }
+
+  // Validação: chave nunca vai para o DOM nem para logs
+  log('info', 'Iniciando análise de ' + LISTINGS.length + ' anúncios via batchShield()');
+  log('info', 'Chave: nt_live_***…' + apiKey.slice(-6) + ' (truncada)');
+
+  running = true;
+  document.getElementById('runBtn').disabled = true;
+  setStatus('A analisar…', 'chip-loading');
+
+  // Mostrar placeholders de loading em todos os cards
+  LISTINGS.forEach(it => {
+    const slot = document.getElementById('shield-' + it.id);
+    if (slot) slot.innerHTML = '<div class="shield-loading"><span class="shield-loading-dot"></span> analisando…</div>';
+  });
+
+  // SDK Nettuno real (packages/nettuno-sdk/nettuno.js) — mesmo pacote do dashboard B2B.
+  // O tema Vedix aplica o visual brutalista via a personalização suportada pelo SDK,
+  // não uma reimplementação do Shield/Vote Panel.
+  const nt = Nettuno.create({ apiUrl, apiKey, theme: VEDIX_THEME });
+  const ids = LISTINGS.map(it => it.id);
+
+  // Processar em batches de 50 (limite da API)
+  const BATCH_SIZE = 50;
+  const batches = [];
+  for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+    batches.push(ids.slice(i, i + BATCH_SIZE));
+  }
+
+  let allResults = [];
+  let lastMeta = {};
+
+  try {
+    const t0 = performance.now();
+
+    for (let bi = 0; bi < batches.length; bi++) {
+      const chunk = batches[bi];
+      log('info', `Batch ${bi + 1}/${batches.length}: ${chunk.length} IDs → POST /v1/listings/batch-shield`);
+
+      const res = await nt.batchShield(chunk);
+      const meta = res.__meta || {};
+      lastMeta = meta;
+
+      const parsedCredits = Number(meta.creditsUsed);
+      const credits = Number.isFinite(parsedCredits) ? parsedCredits : 0;
+      totalCreditsUsed += credits;
+
+      log('ok',    `Batch ${bi + 1} OK: ${res.results.length} resultados`, '');
+      log(meta.cache === 'HIT' ? 'cache' : 'info',
+          'Cache: ' + (meta.cache || '?') +
+          ' · Créditos usados: ' + (meta.creditsUsed ?? '0') +
+          ' · Restante: ' + (meta.quotaRemaining || '?'));
+
+      // Montar o Shield real para este chunk — 0 créditos (leitura/cache). Clicar no
+      // escudo já abre o painel completo real (voto + partilha + abas de sinais),
+      // não é preciso montar um painel de voto à parte.
+      res.results.forEach((risk, i) => {
+        const id = chunk[i];
+        const slot = document.getElementById('shield-' + id);
+        if (slot) nt.mountShield(slot, risk, { onVote: (type) => log('info', id + ' → voto ' + type + ' registado') });
+
+        renderSignalsFeed(document.getElementById('signals-' + id), risk.signals);
+
+        log('ok', id + ' → ' + risk.state + ' (' + risk.score + ')',
+            'v:' + risk.votes.green + '↑ ' + risk.votes.red + '↓');
+      });
+
+      allResults = allResults.concat(res.results);
+    }
+
+    // ─── Fase 2: pedir Análise Profunda real (Signal Engine) por anúncio ──
+    // Cada chamada consome 1 Risk Unit e corre em fila assíncrona no backend.
+    log('info', 'Fase 2: a pedir Análise Profunda real (Signal Engine) para cada anúncio…');
+    for (const it of LISTINGS) {
+      try {
+        const priceNum = parseFloat(String(it.p).replace(/[^\d.]/g, '')) || null;
+        const analyzeRes = await nt.requestAnalysis(it.id, { title: it.t, description: it.desc || '', price: priceNum });
+        totalCreditsUsed += 1;
+        log('info', it.id + ' → analyze() ' + analyzeRes.status);
+      } catch (err) {
+        log('err', it.id + ' → erro no analyze(): ' + (err.message || err));
+      }
+    }
+
+    // A análise corre em background — aguarda antes de reler o estado final
+    log('info', 'A aguardar processamento assíncrono do Signal Engine (≈2s)…');
+    await new Promise(r => setTimeout(r, 2000));
+
+    log('info', 'Fase 3: a reler estado final (com sinais reais já persistidos)…');
+    const finalRes = await nt.batchShield(ids);
+    allResults = finalRes.results;
+    finalRes.results.forEach((risk, i) => {
+      const id = ids[i];
+      const slot = document.getElementById('shield-' + id);
+      if (slot) nt.mountShield(slot, risk, { onVote: (type) => log('info', id + ' → voto ' + type + ' registado') });
+
+      renderSignalsFeed(document.getElementById('signals-' + id), risk.signals);
+
+      const card = document.getElementById('card-' + id);
+      if (card) {
+        card.style.borderTop = risk.state === 'TRUSTED' ? '3px solid #059669'
+          : risk.state === 'RISK' ? '3px solid #B45309' : '';
+      }
+      if (risk.signals && risk.signals.length) {
+        log('warn', id + ' → ' + risk.signals.length + ' sinal(is) real(is) detetado(s) pelo Signal Engine');
+      }
+    });
+
+    const elapsed = Math.round(performance.now() - t0);
+
+    // Atualizar métricas
+    setMetric('m-credits', totalCreditsUsed, '#059669');
+    setMetric('m-quota', lastMeta.quotaRemaining || '—', '#7c3aed');
+    setMetric('m-cache', lastMeta.cache || '—',
+      lastMeta.cache === 'HIT' ? '#7c3aed' : lastMeta.cache === 'MISS' ? '#d97706' : '#64748b');
+    setMetric('m-rate', lastMeta.rateRemaining || '—',
+      Number(lastMeta.rateRemaining) < 20 ? '#B45309' : '#059669');
+    setMetric('m-latency', elapsed + 'ms', elapsed < 400 ? '#059669' : elapsed < 1200 ? '#d97706' : '#B45309');
+
+    updateQuotaBar(totalCreditsUsed, lastMeta.quotaRemaining);
+
+    // Contagem de escudos por estado
+    const trusted = allResults.filter(r => r.state === 'TRUSTED').length;
+    const risk    = allResults.filter(r => r.state === 'RISK').length;
+    const safe    = allResults.filter(r => r.state === 'SAFE').length;
+
+    log('ok', `Análise concluída em ${elapsed}ms`);
+    log('info', `Shields: ${trusted} TRUSTED · ${safe} SAFE · ${risk} RISK`);
+    log('info', `Créditos este batch: ${totalCreditsUsed} · Rate limit restante: ${lastMeta.rateRemaining || '?'}`);
+
+    setStatus('Análise concluída ✓', 'chip-ok');
+
+  } catch (err) {
+    const status = err.status || '?';
+    const msg = err.message || String(err);
+
+    if (status === 401) {
+      log('err', '401 Unauthorized — API key inválida ou em falta');
+    } else if (status === 402) {
+      log('warn', '402 Quota Exceeded — sem créditos suficientes neste ciclo');
+    } else if (status === 429) {
+      log('warn', '429 Rate Limit — aguarda antes de enviar novo batch');
+      setMetric('m-rate', '0', '#B45309');
+    } else {
+      log('err', 'Erro ' + status + ': ' + msg);
+    }
+
+    // Mostrar estado de erro nos shields pendentes
+    LISTINGS.forEach(it => {
+      const slot = document.getElementById('shield-' + it.id);
+      if (slot && slot.querySelector('.shield-loading')) {
+        slot.innerHTML = '<div class="shield-loading" style="border-color:#B45309;color:#B45309">✕ erro ' + status + '</div>';
+      }
+    });
+
+    setStatus('Erro ' + status, 'chip-err');
+  } finally {
+    running = false;
+    document.getElementById('runBtn').disabled = false;
+  }
+}
+
+// ─── Persistência local da API Key (só este demo, só este dispositivo) ──
+const REMEMBER_KEY_STORAGE = 'nettuno_vedix_demo_key';
+
+function toggleKeyVisibility() {
+  const input = document.getElementById('apiKey');
+  const btn = document.getElementById('toggleKeyBtn');
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  btn.textContent = showing ? '👁' : '🙈';
+}
+
+function onRememberToggle() {
+  const remember = document.getElementById('rememberKey').checked;
+  if (remember) {
+    const val = document.getElementById('apiKey').value.trim();
+    if (val) {
+      try { localStorage.setItem(REMEMBER_KEY_STORAGE, val); } catch (e) {}
+    }
+  } else {
+    try { localStorage.removeItem(REMEMBER_KEY_STORAGE); } catch (e) {}
+  }
+}
+
+function onKeyInput() {
+  if (document.getElementById('rememberKey').checked) {
+    const val = document.getElementById('apiKey').value.trim();
+    try {
+      if (val) localStorage.setItem(REMEMBER_KEY_STORAGE, val);
+      else localStorage.removeItem(REMEMBER_KEY_STORAGE);
+    } catch (e) {}
+  }
+}
+
+// ─── Boot ────────────────────────────────────────────────────────
+(function init() {
+  // Pré-preencher apiUrl e key a partir de ?url=&key= (apenas local, nunca produção)
+  const params = new URLSearchParams(location.search);
+  if (params.get('url')) document.getElementById('apiUrl').value = params.get('url');
+  if (params.get('key')) {
+    document.getElementById('apiKey').value = params.get('key');
+    log('warn', 'API Key recebida via query param. Só usar em testes locais — nunca em produção.');
+  } else {
+    // Recupera chave guardada localmente, se existir
+    try {
+      const saved = localStorage.getItem(REMEMBER_KEY_STORAGE);
+      if (saved) {
+        document.getElementById('apiKey').value = saved;
+        document.getElementById('rememberKey').checked = true;
+        log('info', 'Chave recuperada deste dispositivo (guardada localmente).');
+      }
+    } catch (e) {}
+  }
+
+  renderGrid();
+
+  log('info', 'Vedix × Nettuno SDK carregado.');
+  log('info', 'Insere a API key e clica em ▶ Analisar Anúncios.');
+  log('info', 'Por definição a chave só fica em memória JS. Marca "lembrar neste dispositivo" para guardá-la no localStorage deste browser (nunca é enviada para lado nenhum).');
+})();
+</script>
+</body>
+</html>

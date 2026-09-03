@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <title>Nettuno B2B Portal</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="_auth.js"></script>
+  <script>
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        window.location.replace('overview.html');
+      } else {
+        window.location.replace('login.html');
+      }
+    });
+  </script>
+</head>
+<body style="background:#070913; color:#fff; font-family:sans-serif; display:flex; align-items:center; justify-content:center; height:100vh;">
+  <p>A redirecionar para o portal...</p>
+</body>
+</html>

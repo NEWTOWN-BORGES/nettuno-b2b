@@ -1,0 +1,177 @@
+﻿<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrar — Nettuno B2B SaaS Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px;
+    }
+    .auth-card {
+      width: 100%; max-width: 440px; background: var(--bg-card);
+      border: 1px solid var(--card-bd-hi); border-radius: var(--r-lg);
+      padding: 36px; box-shadow: 0 25px 60px rgba(0,0,0,0.8); position: relative; z-index: 10;
+    }
+    .auth-brand {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 28px;
+    }
+    .tabs {
+      display: flex; border-bottom: 1px solid var(--card-bd); margin-bottom: 24px;
+    }
+    .tab {
+      flex: 1; padding: 10px; background: transparent; border: none;
+      color: var(--muted); font-family: var(--font-main); font-size: 13px;
+      font-weight: 700; cursor: pointer; text-transform: uppercase;
+      border-bottom: 2px solid transparent; transition: all 0.15s;
+    }
+    .tab.active {
+      color: #fff; border-bottom-color: var(--neptune-2);
+    }
+    .form-group {
+      margin-bottom: 18px; display: flex; flex-direction: column; gap: 6px;
+    }
+    .form-group label {
+      font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+      color: var(--muted); text-transform: uppercase;
+    }
+    .auth-error {
+      background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5; font-size: 13px; padding: 10px 14px; border-radius: var(--r-sm);
+      margin-bottom: 18px; display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="atmos"></div>
+
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="dash-planet">🔱</div>
+      <span class="dash-logo-text">NETTUNO</span>
+      <span class="dash-badge">B2B SAAS</span>
+    </div>
+
+    <div class="tabs">
+      <button type="button" class="tab active" id="tabLogin" onclick="switchTab('login')">Entrar</button>
+      <button type="button" class="tab" id="tabRegister" onclick="switchTab('register')">Criar Conta</button>
+    </div>
+
+    <div id="authError" class="auth-error"></div>
+
+    <form id="authForm" onsubmit="handleAuth(event)">
+      <div class="form-group" id="groupName" style="display:none;">
+        <label for="name">Nome do Marketplace</label>
+        <input id="name" class="inp" type="text" placeholder="Ex: Vedix Marketplace">
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Corporativo</label>
+        <input id="email" class="inp" type="email" required placeholder="dev@marketplace.com">
+      </div>
+
+      <div class="form-group">
+        <label for="password">Palavra-passe</label>
+        <input id="password" class="inp" type="password" required placeholder="••••••••">
+      </div>
+
+      <button id="submitBtn" class="btn-primary" style="width:100%; justify-content:center; padding:12px; margin-top:8px;" type="submit">
+        Entrar no Dashboard
+      </button>
+    </form>
+
+    <div style="display:flex; align-items:center; gap:12px; margin:20px 0;">
+      <div style="flex:1; height:1px; background:var(--card-bd);"></div>
+      <span style="font-size:11px; color:var(--muted); text-transform:uppercase; font-family:var(--font-mono);">ou</span>
+      <div style="flex:1; height:1px; background:var(--card-bd);"></div>
+    </div>
+
+    <button id="googleBtn" type="button" class="btn-secondary" style="width:100%; justify-content:center; padding:12px; gap:10px;" onclick="handleGoogleAuth()">
+      <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.54 5.54 0 0 1-2.4 3.63v3h3.87c2.27-2.09 3.58-5.17 3.58-8.82z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.94-2.9l-3.87-3c-1.08.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.27v3.1A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.27 14.29A7.2 7.2 0 0 1 4.89 12c0-.79.14-1.56.38-2.29v-3.1H1.27A12 12 0 0 0 0 12c0 1.94.46 3.76 1.27 5.39l4-3.1z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.94 1.19 15.24 0 12 0 7.31 0 3.26 2.69 1.27 6.61l4 3.1C6.22 6.86 8.87 4.75 12 4.75z"/></svg>
+      Entrar com Google
+    </button>
+
+    <div style="margin-top:24px; text-align:center; font-size:12px; color:var(--muted);">
+      <a href="../index.html" style="color:var(--cyan); text-decoration:none;">← Voltar ao website da Nettuno</a>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
+  <script src="_auth.js"></script>
+
+  <script>
+    let mode = 'login';
+
+    function switchTab(newMode) {
+      mode = newMode;
+      document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
+      document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
+      document.getElementById('groupName').style.display = mode === 'register' ? 'flex' : 'none';
+      document.getElementById('submitBtn').textContent = mode === 'login' ? 'Entrar no Dashboard' : 'Criar Conta Developer';
+      document.getElementById('authError').style.display = 'none';
+    }
+
+    async function handleAuth(e) {
+      e.preventDefault();
+      const errBox = document.getElementById('authError');
+      const btn = document.getElementById('submitBtn');
+      errBox.style.display = 'none';
+      btn.disabled = true;
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const name = document.getElementById('name').value.trim() || 'Marketplace';
+
+      try {
+        if (mode === 'register') {
+          if (!functions) throw new Error('Firebase Functions indisponível — recarregue a página.');
+          // Registo passa pelo servidor (registerCompany): valida os dados, aplica
+          // rate limiting por IP e fixa plan/status — o cliente já não escreve
+          // marketplaces/{uid} diretamente nem cria a conta Auth por si.
+          const fn = functions.httpsCallable('registerCompany');
+          const { data } = await fn({ email, password, companyName: name });
+          await auth.signInWithCustomToken(data.customToken);
+        } else {
+          if (auth) {
+            await auth.signInWithEmailAndPassword(email, password);
+          }
+        }
+        window.location.href = 'overview.html';
+      } catch (err) {
+        errBox.textContent = err.message || 'Erro ao autenticar.';
+        errBox.style.display = 'block';
+        btn.disabled = false;
+      }
+    }
+
+    async function handleGoogleAuth() {
+      const errBox = document.getElementById('authError');
+      const btn = document.getElementById('googleBtn');
+      errBox.style.display = 'none';
+      if (!auth) return;
+      btn.disabled = true;
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await auth.signInWithPopup(provider);
+        window.location.href = 'overview.html';
+      } catch (err) {
+        errBox.textContent = err.message || 'Erro ao autenticar com Google.';
+        errBox.style.display = 'block';
+        btn.disabled = false;
+      }
+    }
+
+    if (auth) {
+      auth.onAuthStateChanged((user) => {
+        if (user) window.location.href = 'overview.html';
+      });
+    }
+  </script>
+</body>
+</html>

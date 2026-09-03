@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Usage & Logs — Nettuno B2B Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050814; --bg-2: #0a0f1f; --bg-elev: #0f152a; --bg-card: #0d1326;
+      --card: rgba(255, 255, 255, 0.025); --card-bd: rgba(255, 255, 255, 0.07); --card-bd-hi: rgba(255, 255, 255, 0.16);
+      --fg: #F0F2F5; --fg-dim: #C8CDD6; --muted: #8B95A5; --muted-2: #5b6675;
+      --neptune: #2A6FF0; --neptune-2: #4F8DFF; --neptune-glow: rgba(42, 111, 240, 0.25);
+      --cyan: #22D3EE; --yellow: #FACC15; --green: #22C55E; --red: #EF4444;
+      --r-lg: 16px; --r-md: 12px; --r-sm: 8px;
+      --font: 'Inter', system-ui, -apple-system, sans-serif; --mono: 'JetBrains Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: var(--bg); color: var(--fg); display: flex; min-height: 100vh; }
+
+    /* Layout */
+    .dash-sidebar { width: 270px; background: rgba(10, 15, 31, 0.75); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border-right: 1px solid var(--card-bd); padding: 24px 18px; display: flex; flex-direction: column; flex-shrink: 0; }
+    .dash-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding: 0 6px; }
+    .dash-logo { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 900; color: #fff; text-decoration: none; }
+    .dash-badge { font-family: var(--mono); font-size: 9px; background: var(--yellow); color: #000; border: none; padding: 3px 6px; border-radius: 4px; font-weight: 800; text-transform: uppercase; }
+    .dash-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .dash-nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; color: var(--muted); font-size: 14px; font-weight: 500; text-decoration: none; border-radius: var(--r-sm); border: 1px solid transparent; transition: all 0.15s; }
+    .dash-nav-item:hover { background: rgba(255,255,255,0.04); color: var(--fg); border-color: var(--card-bd); }
+    .dash-nav-item.active { background: rgba(42, 111, 240, 0.15); color: #fff; border-color: rgba(79, 141, 255, 0.35); font-weight: 600; box-shadow: 0 4px 16px -4px rgba(42, 111, 240, 0.3); }
+    .dash-user { border-top: 1px solid var(--card-bd); padding-top: 16px; display: flex; align-items: center; justify-content: space-between; }
+    .dash-user-name { font-size: 13px; font-weight: 700; color: #fff; }
+    .dash-user-email { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+    .dash-btn-logout { background: transparent; border: none; color: var(--muted); cursor: pointer; padding: 6px; border-radius: 6px; transition: all 0.15s; }
+    .dash-btn-logout:hover { color: var(--red); background: rgba(239, 68, 68, 0.1); }
+
+    .dash-main { flex: 1; padding: 36px 44px; overflow-y: auto; position: relative; }
+    .page-header { margin-bottom: 28px; }
+    .page-title { font-size: 26px; font-weight: 900; letter-spacing: -0.02em; color: #fff; margin-bottom: 4px; }
+    .page-sub { font-size: 14px; color: var(--fg-dim); }
+
+    .card-panel { background: var(--bg-card); border: 1px solid var(--card-bd); border-radius: var(--r-md); padding: 24px; margin-bottom: 24px; box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.5); transition: border-color 0.15s; }
+    .card-panel:hover { border-color: var(--card-bd-hi); }
+    .panel-title { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+
+    .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .table th { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--card-bd); font-family: var(--mono); font-size: 11px; color: var(--muted); text-transform: uppercase; }
+    .table td { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .table tr:last-child td { border-bottom: none; }
+    .tag { font-family: var(--mono); font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+    .tag-get { background: rgba(34,211,238,0.15); color: var(--cyan); }
+    .tag-post { background: rgba(34,197,94,0.15); color: var(--green); }
+    .dash-toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: var(--r-sm); color: #fff; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 1000; }
+    .dash-toast.show { opacity: 1; pointer-events: auto; }
+  </style>
+</head>
+<body>
+
+  <div id="sidebar-slot"></div>
+
+  <main class="dash-main">
+    <div class="page-header">
+      <h1 class="page-title">Métricas de Consumo</h1>
+      <p class="page-sub">Registo e contabilização de créditos debitados nas chamadas à Risk API V1.</p>
+    </div>
+
+    <div class="card-panel">
+      <div class="panel-title">
+        <span>Tabela de Operações & Créditos</span>
+      </div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Método</th>
+            <th>Endpoint</th>
+            <th>Cálculo de Créditos</th>
+            <th>Cache L1</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="tag tag-get">GET</span></td>
+            <td><code>/v1/listings/{id}/risk</code></td>
+            <td><strong>1 crédito</strong> por anúncio</td>
+            <td>5 min TTL</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-post">POST</span></td>
+            <td><code>/v1/listings/batch-risk</code></td>
+            <td><strong>N créditos</strong> (onde N = quantidade de IDs)</td>
+            <td>5 min TTL</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card-panel">
+      <div class="panel-title">
+        <span>Detalhe do Ciclo Atual</span>
+      </div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px;">
+        <div style="background:rgba(0,0,0,0.35); padding:16px; border-radius:var(--r-sm); border:1px solid var(--card-bd);">
+          <div style="font-family:var(--mono); font-size:11px; color:var(--muted);">PERÍODO</div>
+          <div id="cyclePeriod" style="font-size:18px; font-weight:700; font-family:var(--mono); margin-top:4px;">—</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.35); padding:16px; border-radius:var(--r-sm); border:1px solid var(--card-bd);">
+          <div style="font-family:var(--mono); font-size:11px; color:var(--muted);">TOTAL DE CRÉDITOS USADOS</div>
+          <div id="totalCredits" style="font-size:18px; font-weight:700; font-family:var(--mono); color:var(--cyan); margin-top:4px;">0</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.35); padding:16px; border-radius:var(--r-sm); border:1px solid var(--card-bd);">
+          <div style="font-family:var(--mono); font-size:11px; color:var(--muted);">POLÍTICA DE OVERAGE</div>
+          <div id="overagePolicy" style="font-size:14px; font-weight:600; margin-top:6px; color:var(--muted);">Desativado (Hard Limit)</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
+  <script src="_auth.js"></script>
+  <script src="_ui.js"></script>
+
+  <script>
+    renderLayout('usage');
+
+    requireAuth((user, mkt) => {
+      document.getElementById('userName').textContent = mkt.name || 'Marketplace';
+      document.getElementById('userEmail').textContent = user.email;
+
+      const cycle = mkt.currentCycle || {};
+      document.getElementById('cyclePeriod').textContent = cycle.period || new Date().toISOString().slice(0, 7);
+      document.getElementById('totalCredits').textContent = (cycle.creditsUsed || 0).toLocaleString('pt-PT');
+      
+      const quota = mkt.quota || {};
+      if (quota.allowOverage) {
+        document.getElementById('overagePolicy').textContent = `Permitido (€${quota.overagePricePer1k || '0.50'}/1k extra)`;
+        document.getElementById('overagePolicy').style.color = 'var(--green)';
+      }
+    });
+  </script>
+</body>
+</html>

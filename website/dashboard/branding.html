@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Branding & Shields — Nettuno B2B Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050814; --bg-2: #0a0f1f; --bg-elev: #0f152a; --bg-card: #0d1326;
+      --card: rgba(255, 255, 255, 0.025); --card-bd: rgba(255, 255, 255, 0.07); --card-bd-hi: rgba(255, 255, 255, 0.16);
+      --fg: #F0F2F5; --fg-dim: #C8CDD6; --muted: #8B95A5; --muted-2: #5b6675;
+      --neptune: #2A6FF0; --neptune-2: #4F8DFF; --neptune-glow: rgba(42, 111, 240, 0.25);
+      --cyan: #22D3EE; --yellow: #FACC15; --green: #22C55E; --red: #EF4444;
+      --r-lg: 16px; --r-md: 12px; --r-sm: 8px;
+      --font: 'Inter', system-ui, -apple-system, sans-serif; --mono: 'JetBrains Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: var(--bg); color: var(--fg); display: flex; min-height: 100vh; }
+
+    /* Layout */
+    .dash-sidebar { width: 270px; background: rgba(10, 15, 31, 0.75); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border-right: 1px solid var(--card-bd); padding: 24px 18px; display: flex; flex-direction: column; flex-shrink: 0; }
+    .dash-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding: 0 6px; }
+    .dash-logo { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 900; color: #fff; text-decoration: none; }
+    .dash-badge { font-family: var(--mono); font-size: 9px; background: var(--yellow); color: #000; border: none; padding: 3px 6px; border-radius: 4px; font-weight: 800; text-transform: uppercase; }
+    .dash-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .dash-nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; color: var(--muted); font-size: 14px; font-weight: 500; text-decoration: none; border-radius: var(--r-sm); border: 1px solid transparent; transition: all 0.15s; }
+    .dash-nav-item:hover { background: rgba(255,255,255,0.04); color: var(--fg); border-color: var(--card-bd); }
+    .dash-nav-item.active { background: rgba(42, 111, 240, 0.15); color: #fff; border-color: rgba(79, 141, 255, 0.35); font-weight: 600; box-shadow: 0 4px 16px -4px rgba(42, 111, 240, 0.3); }
+    .dash-user { border-top: 1px solid var(--card-bd); padding-top: 16px; display: flex; align-items: center; justify-content: space-between; }
+    .dash-user-name { font-size: 13px; font-weight: 700; color: #fff; }
+    .dash-user-email { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+    .dash-btn-logout { background: transparent; border: none; color: var(--muted); cursor: pointer; padding: 6px; border-radius: 6px; transition: all 0.15s; }
+    .dash-btn-logout:hover { color: var(--red); background: rgba(239, 68, 68, 0.1); }
+
+    .dash-main { flex: 1; padding: 36px 44px; overflow-y: auto; position: relative; }
+    .page-header { margin-bottom: 28px; }
+    .page-title { font-size: 26px; font-weight: 900; letter-spacing: -0.02em; color: #fff; margin-bottom: 4px; }
+    .page-sub { font-size: 14px; color: var(--fg-dim); }
+
+    /* Customizer Grid */
+    .branding-layout { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; align-items: start; }
+    .config-pane { display: flex; flex-direction: column; gap: 20px; }
+    .preview-pane { position: sticky; top: 20px; display: flex; flex-direction: column; gap: 20px; }
+
+    .card-panel { background: var(--bg-card); border: 1px solid var(--card-bd); border-radius: var(--r-md); padding: 24px; box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.5); transition: border-color 0.15s; }
+    .card-panel:hover { border-color: var(--card-bd-hi); }
+    .panel-title { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+
+    .preset-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .preset-chip {
+      padding: 6px 12px; font-family: var(--mono); font-size: 11px; font-weight: 700;
+      border: 1px solid var(--card-bd); background: rgba(0,0,0,0.35); color: var(--muted);
+      border-radius: var(--r-sm); cursor: pointer; transition: all 0.15s;
+    }
+    .preset-chip:hover { border-color: var(--neptune-2); color: #fff; }
+    .preset-chip.active { background: rgba(42, 111, 240, 0.15); border-color: var(--neptune-2); color: var(--cyan); }
+
+    .field-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-family: var(--mono); font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+    .inp { background: rgba(0,0,0,0.35); border: 1px solid var(--card-bd); color: #fff; padding: 10px 14px; border-radius: var(--r-sm); font-family: var(--font); font-size: 14px; outline: none; width: 100%; transition: border-color 0.15s, box-shadow 0.15s; }
+    .inp:focus { border-color: var(--neptune-2); box-shadow: 0 0 0 3px rgba(42, 111, 240, 0.2); }
+    .inp-color { padding: 2px; height: 36px; cursor: pointer; }
+
+    .btn-save {
+      background: linear-gradient(135deg, var(--neptune), var(--neptune-2)); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 12px 24px;
+      font-family: var(--font); font-size: 13px; font-weight: 700; border-radius: var(--r-sm);
+      cursor: pointer; text-transform: uppercase; width: 100%; transition: all 0.15s ease;
+      box-shadow: 0 4px 18px -2px rgba(42, 111, 240, 0.6);
+    }
+    .btn-save:hover { transform: translateY(-1px); box-shadow: 0 6px 22px -2px rgba(42, 111, 240, 0.8); }
+
+    /* Preview Canvas */
+    .preview-box {
+      background: rgba(0,0,0,0.35); border: 1px solid var(--card-bd); border-radius: var(--r-sm);
+      padding: 24px; display: flex; flex-direction: column; gap: 20px;
+    }
+    .preview-section-title { font-family: var(--mono); font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+    .preview-shield-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+    .code-box { background: #02040a; border: 1px solid var(--card-bd); padding: 14px 16px; border-radius: var(--r-sm); font-family: var(--mono); font-size: 12px; color: var(--cyan); overflow-x: auto; max-height: 220px; line-height: 1.6; }
+    .dash-toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 6px; color: #fff; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 1000; }
+    .dash-toast.show { opacity: 1; pointer-events: auto; }
+
+    @media (max-width: 1024px) {
+      .branding-layout { grid-template-columns: 1fr; }
+      .preview-pane { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="sidebar-slot"></div>
+
+  <main class="dash-main">
+    <div class="page-header">
+      <h1 class="page-title">Personalização de Escudos & Votação</h1>
+      <p class="page-sub">Configure a apresentação visual do Nettuno Shield para se integrar nativamente com a identidade da sua marca.</p>
+    </div>
+
+    <div class="branding-layout">
+      <!-- PAINEL ESQUERDO: CONFIGURAÇÃO -->
+      <div class="config-pane">
+        
+        <!-- PRESETS -->
+        <div class="card-panel">
+          <div class="panel-title"><span>Temas Pré-definidos</span></div>
+          <div class="preset-chips">
+            <button class="preset-chip active" onclick="applyPreset('default')">Nettuno Default</button>
+            <button class="preset-chip" onclick="applyPreset('vedix')">Vedix Neo-Brutalist</button>
+            <button class="preset-chip" onclick="applyPreset('minimal')">Minimal Clean</button>
+            <button class="preset-chip" onclick="applyPreset('dark')">Dark Cyber</button>
+          </div>
+        </div>
+
+        <!-- ESCUDO SEGURO (SAFE) -->
+        <div class="card-panel">
+          <div class="panel-title"><span style="color:var(--green)">🛡️ Escudo SAFE (Sem suspeitas)</span></div>
+          <div class="field-row">
+            <div class="form-group">
+              <label>Texto do Label</label>
+              <input type="text" id="safeLabel" class="inp" value="Seguro" oninput="updateLivePreview()">
+            </div>
+            <div class="form-group">
+              <label>Ícone</label>
+              <input type="text" id="safeIcon" class="inp" value="🛡️" oninput="updateLivePreview()">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="form-group">
+              <label>Cor do Texto</label>
+              <input type="color" id="safeColor" class="inp inp-color" value="#059669" oninput="updateLivePreview()">
+            </div>
+            <div class="form-group">
+              <label>Fundo</label>
+              <input type="color" id="safeBg" class="inp inp-color" value="#ecfdf5" oninput="updateLivePreview()">
+            </div>
+            <div class="form-group">
+              <label>Borda (CSS)</label>
+              <input type="text" id="safeBorder" class="inp" value="1px solid #10b981" oninput="updateLivePreview()">
+            </div>
+          </div>
+        </div>
+
+        <!-- ESCUDO CONFIÁVEL (TRUSTED) -->
+        <div class="card-panel">
+          <div class="panel-title"><span style="color:#047857">✓ Escudo TRUSTED (Comunidade Forte)</span></div>
+          <div class="field-row">
+            <div class="form-group">
+              <label>Texto do Label</label>
+              <input type="text" id="trustedLabel" class="inp" value="Confiável" oninput="updateLivePreview()">
+            </div>
+            <div class="form-group">
+              <label>Ícone</label>
+              <input type="text" id="trustedIcon" class="inp" value="✓" oninput="updateLivePreview()">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="form-group">
+              <label>Cor do Texto</label>
+              <input type="color" id="trustedColor" class="inp inp-color" value="#047857" oninput="updateLivePreview()">
+            </div>
+            <div class="form-group">
+              <label>Fundo</label>
+              <input type="color" id="trustedBg" class="inp inp-color" value="#d1fae5" oninput="updateLivePreview()">
+            </div>
+            <div class="form-group">
+              <label>Borda (CSS)</label>
+              <input type="text" id="trustedBorder" class="inp" value="1px solid #059669" oninput="updateLivePreview()">
+            </div>
+          </div>
+        </div>
+
+        <!-- ESCUDO RISCO (RISK) -->
+        <div class="card-panel">
+          <div class="panel-title"><span style="color:var(--red)">⚠ Escudo RISK (Atenção / Suspeito)</span></div>
+          <div class="field-row">
+            <div class="form-group">
+              <label>Texto do Label</label>
+              <input type="text" id="riskLabel" class="inp" value="Atenção" oninput="updateLivePreview()">
+            </div>
+            <div class="form-group">
+              <label>Ícone</label>
+              <input type="text" id="riskIcon" class="inp" value="⚠" oninput="updateLivePreview()">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="form-group">
+              <label>Cor do Texto</label>
+              <input type="color" id="riskColor" class="inp inp-color" value="#b45309" oninput="updateLivePreview()">
+            </div>
+            <div class="form-group">
+              <label>Fundo</label>
+              <input type="color" id="riskBg" class="inp inp-color" value="#fffbeb" oninput="updateLivePreview()">
+            </div>
+            <div class="form-group">
+              <label>Borda (CSS)</label>
+              <input type="text" id="riskBorder" class="inp" value="1px solid #f59e0b" oninput="updateLivePreview()">
+            </div>
+          </div>
+        </div>
+
+        <!-- PAINEL DE VOTAÇÃO -->
+        <div class="card-panel">
+          <div class="panel-title"><span>👍 Painel de Votos Comunitário</span></div>
+          <div class="field-row">
+            <div class="form-group">
+              <label>Título do Painel</label>
+              <input type="text" id="voteTitle" class="inp" value="Verificação da Comunidade" oninput="updateLivePreview()">
+            </div>
+            <div class="form-group">
+              <label>Raio da Borda dos Botões</label>
+              <input type="text" id="buttonRadius" class="inp" value="6px" oninput="updateLivePreview()">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="form-group">
+              <label>Label Positivo</label>
+              <input type="text" id="posLabel" class="inp" value="Parece Seguro" oninput="updateLivePreview()">
+            </div>
+            <div class="form-group">
+              <label>Ícone Positivo</label>
+              <input type="text" id="posIcon" class="inp" value="👍" oninput="updateLivePreview()">
+            </div>
+            <div class="form-group">
+              <label>Cor Positivo</label>
+              <input type="color" id="posColor" class="inp inp-color" value="#047857" oninput="updateLivePreview()">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="form-group">
+              <label>Label Negativo</label>
+              <input type="text" id="negLabel" class="inp" value="Suspeito" oninput="updateLivePreview()">
+            </div>
+            <div class="form-group">
+              <label>Ícone Negativo</label>
+              <input type="text" id="negIcon" class="inp" value="⚠" oninput="updateLivePreview()">
+            </div>
+            <div class="form-group">
+              <label>Cor Negativo</label>
+              <input type="color" id="negColor" class="inp inp-color" value="#b91c1c" oninput="updateLivePreview()">
+            </div>
+          </div>
+        </div>
+
+        <!-- OPÇÕES GERAIS -->
+        <div class="card-panel">
+          <div class="panel-title"><span>Opções de Exibição</span></div>
+          <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="chkScore" checked onchange="updateLivePreview()">
+              Exibir Pontuação Numérica de Confiança (ex: · 85)
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="chkPowered" checked onchange="updateLivePreview()">
+              Exibir marca discreta "by Nettuno"
+            </label>
+          </div>
+        </div>
+
+        <button class="btn-save" id="btnSave" onclick="saveThemeConfig()">💾 Guardar Tema no Perfil</button>
+      </div>
+
+      <!-- PAINEL DIREITO: PREVIEW AO VIVO -->
+      <div class="preview-pane">
+        <div class="card-panel">
+          <div class="panel-title">
+            <span>👁️ Live Preview</span>
+            <span style="font-size:11px; color:var(--muted); font-family:var(--mono);">Atualizado em tempo real</span>
+          </div>
+
+          <div class="preview-box">
+            <div>
+              <div class="preview-section-title">1. Escudos de Anúncio</div>
+              <div class="preview-shield-row" style="margin-bottom:8px;">
+                <div id="previewSafeSlot"></div>
+                <div id="previewTrustedSlot"></div>
+              </div>
+              <div class="preview-shield-row">
+                <div id="previewRiskSlot"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="preview-section-title">2. Painel de Voto do Produto</div>
+              <div id="previewVoteSlot"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CÓDIGO GERADO -->
+        <div class="card-panel">
+          <div class="panel-title">
+            <span>Código de Inicialização do SDK</span>
+            <button type="button" class="preset-chip" style="padding:3px 8px;" onclick="copyThemeSnippet()">Copiar JS</button>
+          </div>
+          <pre class="code-box" id="codeSnippet"></pre>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
+  <script src="../sdk/nettuno.js"></script>
+  <script src="_auth.js"></script>
+  <script src="_ui.js"></script>
+
+  <script>
+    renderLayout('branding');
+
+    let currentUser = null;
+
+    const PRESETS = {
+      default: {
+        safe: { label: 'Seguro', icon: '🛡️', color: '#059669', bg: '#ecfdf5', border: '1px solid #10b981' },
+        trusted: { label: 'Confiável', icon: '✓', color: '#047857', bg: '#d1fae5', border: '1px solid #059669' },
+        risk: { label: 'Atenção', icon: '⚠', color: '#b45309', bg: '#fffbeb', border: '1px solid #f59e0b' },
+        vote: { title: 'Verificação da Comunidade', posLabel: 'Parece Seguro', posIcon: '👍', posColor: '#047857', posBg: '#ecfdf5', posBorder: '1px solid #10b981', negLabel: 'Suspeito', negIcon: '⚠', negColor: '#b91c1c', negBg: '#fef2f2', negBorder: '1px solid #ef4444', radius: '6px' },
+        showScore: true, showPowered: true
+      },
+      vedix: {
+        safe: { label: 'SEGURO', icon: '✓', color: '#0A0A0A', bg: '#FFB162', border: '2px solid #0A0A0A' },
+        trusted: { label: 'CONFIÁVEL', icon: '⭐', color: '#0A0A0A', bg: '#FFB162', border: '2px solid #0A0A0A' },
+        risk: { label: 'VERIFICA', icon: '!', color: '#FFFFFF', bg: '#A35139', border: '2px solid #0A0A0A' },
+        vote: { title: 'CONFIRMAÇÃO DO DROP', posLabel: 'Genuíno', posIcon: '✓', posColor: '#0A0A0A', posBg: '#FFB162', posBorder: '2px solid #0A0A0A', negLabel: 'Alerta', negIcon: '✕', negColor: '#FFFFFF', negBg: '#A35139', negBorder: '2px solid #0A0A0A', radius: '0px' },
+        showScore: true, showPowered: false
+      },
+      minimal: {
+        safe: { label: 'Verificado', icon: '●', color: '#10b981', bg: '#ffffff', border: '1px solid #e2e8f0' },
+        trusted: { label: 'Excelente', icon: '●', color: '#3b82f6', bg: '#ffffff', border: '1px solid #e2e8f0' },
+        risk: { label: 'Cautela', icon: '●', color: '#ef4444', bg: '#ffffff', border: '1px solid #e2e8f0' },
+        vote: { title: 'Opinião de Compradores', posLabel: 'Recomendo', posIcon: '✓', posColor: '#10b981', posBg: '#ffffff', posBorder: '1px solid #e2e8f0', negLabel: 'Não Recomendo', negIcon: '✕', negColor: '#ef4444', negBg: '#ffffff', negBorder: '1px solid #e2e8f0', radius: '20px' },
+        showScore: false, showPowered: true
+      },
+      dark: {
+        safe: { label: 'PROTECTED', icon: '⚡', color: '#38bdf8', bg: '#0f172a', border: '1px solid #38bdf8' },
+        trusted: { label: 'VERIFIED', icon: '🔒', color: '#34d399', bg: '#0f172a', border: '1px solid #34d399' },
+        risk: { label: 'THREAT', icon: '☣', color: '#f87171', bg: '#0f172a', border: '1px solid #f87171' },
+        vote: { title: 'SECURITY CONSENSUS', posLabel: 'AUTHENTIC', posIcon: '⚡', posColor: '#34d399', posBg: '#0f172a', posBorder: '1px solid #34d399', negLabel: 'FLAG FRAUD', negIcon: '☣', negColor: '#f87171', negBg: '#0f172a', negBorder: '1px solid #f87171', radius: '4px' },
+        showScore: true, showPowered: true
+      }
+    };
+
+    function applyPreset(name) {
+      document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+
+      const p = PRESETS[name] || PRESETS.default;
+      document.getElementById('safeLabel').value = p.safe.label;
+      document.getElementById('safeIcon').value = p.safe.icon;
+      document.getElementById('safeColor').value = p.safe.color;
+      document.getElementById('safeBg').value = p.safe.bg;
+      document.getElementById('safeBorder').value = p.safe.border;
+
+      document.getElementById('trustedLabel').value = p.trusted.label;
+      document.getElementById('trustedIcon').value = p.trusted.icon;
+      document.getElementById('trustedColor').value = p.trusted.color;
+      document.getElementById('trustedBg').value = p.trusted.bg;
+      document.getElementById('trustedBorder').value = p.trusted.border;
+
+      document.getElementById('riskLabel').value = p.risk.label;
+      document.getElementById('riskIcon').value = p.risk.icon;
+      document.getElementById('riskColor').value = p.risk.color;
+      document.getElementById('riskBg').value = p.risk.bg;
+      document.getElementById('riskBorder').value = p.risk.border;
+
+      document.getElementById('voteTitle').value = p.vote.title;
+      document.getElementById('posLabel').value = p.vote.posLabel;
+      document.getElementById('posIcon').value = p.vote.posIcon;
+      document.getElementById('posColor').value = p.vote.posColor;
+      document.getElementById('negLabel').value = p.vote.negLabel;
+      document.getElementById('negIcon').value = p.vote.negIcon;
+      document.getElementById('negColor').value = p.vote.negColor;
+      document.getElementById('buttonRadius').value = p.vote.radius;
+
+      document.getElementById('chkScore').checked = p.showScore;
+      document.getElementById('chkPowered').checked = p.showPowered;
+
+      updateLivePreview();
+    }
+
+    function getFormTheme() {
+      return {
+        showScore: document.getElementById('chkScore').checked,
+        showPoweredBy: document.getElementById('chkPowered').checked,
+        borderRadius: document.getElementById('buttonRadius').value || '4px',
+        shield: {
+          safe: {
+            label: document.getElementById('safeLabel').value,
+            icon: document.getElementById('safeIcon').value,
+            color: document.getElementById('safeColor').value,
+            bg: document.getElementById('safeBg').value,
+            border: document.getElementById('safeBorder').value
+          },
+          trusted: {
+            label: document.getElementById('trustedLabel').value,
+            icon: document.getElementById('trustedIcon').value,
+            color: document.getElementById('trustedColor').value,
+            bg: document.getElementById('trustedBg').value,
+            border: document.getElementById('trustedBorder').value
+          },
+          risk: {
+            label: document.getElementById('riskLabel').value,
+            icon: document.getElementById('riskIcon').value,
+            color: document.getElementById('riskColor').value,
+            bg: document.getElementById('riskBg').value,
+            border: document.getElementById('riskBorder').value
+          }
+        },
+        votePanel: {
+          title: document.getElementById('voteTitle').value,
+          buttonRadius: document.getElementById('buttonRadius').value,
+          positiveLabel: document.getElementById('posLabel').value,
+          positiveIcon: document.getElementById('posIcon').value,
+          positiveColor: document.getElementById('posColor').value,
+          positiveBg: document.getElementById('safeBg').value,
+          positiveBorder: '1px solid ' + document.getElementById('posColor').value,
+          negativeLabel: document.getElementById('negLabel').value,
+          negativeIcon: document.getElementById('negIcon').value,
+          negativeColor: document.getElementById('negColor').value,
+          negativeBg: document.getElementById('riskBg').value,
+          negativeBorder: '1px solid ' + document.getElementById('negColor').value
+        }
+      };
+    }
+
+    function updateLivePreview() {
+      const theme = getFormTheme();
+      const nt = Nettuno.create({ theme });
+
+      // Live Shields
+      nt.mountShield(document.getElementById('previewSafeSlot'), { state: 'SAFE', score: 62 });
+      nt.mountShield(document.getElementById('previewTrustedSlot'), { state: 'TRUSTED', score: 94 });
+      nt.mountShield(document.getElementById('previewRiskSlot'), { state: 'RISK', score: 28 });
+
+      // Live Vote Panel
+      nt.mountVotePanel(document.getElementById('previewVoteSlot'), 'preview_ad', {
+        onVote: (type) => {
+          showToast(`Voto ${type === 'POSITIVE' ? 'Positivo' : 'Negativo'} simulado no preview!`);
+        }
+      });
+
+      // Code snippet
+      const code = `// 1. Instalar o SDK\n<script src="https://nettuno-e6036.web.app/sdk/nettuno.js"><\/script>\n\n// 2. Inicializar com as vossas cores e textos\nconst nt = Nettuno.create({\n  apiKey: 'nt_live_SUA_CHAVE',\n  theme: ${JSON.stringify(theme, null, 2)}\n});\n\n// 3. Montar Escudo no Anúncio\nnt.mountShield(element, riskData);\n\n// 4. Montar Painel de Votos\nnt.mountVotePanel(voteElement, listingId);`;
+      document.getElementById('codeSnippet').textContent = code;
+    }
+
+    function copyThemeSnippet() {
+      copyToClipboard(document.getElementById('codeSnippet').textContent, 'Código do SDK copiado!');
+    }
+
+    async function saveThemeConfig() {
+      if (!currentUser) return;
+      const btn = document.getElementById('btnSave');
+      btn.disabled = true;
+      btn.textContent = 'A guardar...';
+
+      try {
+        const theme = getFormTheme();
+        await db.doc(`marketplaces/${currentUser.uid}`).set({
+          theme,
+          updatedAt: Date.now()
+        }, { merge: true });
+        showToast('✓ Tema e preferências de marca guardados com sucesso!');
+      } catch (err) {
+        showToast('Erro ao guardar tema: ' + err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '💾 Guardar Tema no Perfil';
+      }
+    }
+
+    requireAuth((user, mkt) => {
+      currentUser = user;
+      document.getElementById('userName').textContent = mkt.name || 'Marketplace';
+      document.getElementById('userEmail').textContent = user.email;
+
+      if (mkt.theme) {
+        // Carregar valores guardados
+        const t = mkt.theme;
+        if (t.shield?.safe) {
+          document.getElementById('safeLabel').value = t.shield.safe.label || 'Seguro';
+          document.getElementById('safeIcon').value = t.shield.safe.icon || '🛡️';
+          document.getElementById('safeColor').value = t.shield.safe.color || '#059669';
+          document.getElementById('safeBg').value = t.shield.safe.bg || '#ecfdf5';
+          document.getElementById('safeBorder').value = t.shield.safe.border || '1px solid #10b981';
+        }
+        if (t.shield?.trusted) {
+          document.getElementById('trustedLabel').value = t.shield.trusted.label || 'Confiável';
+          document.getElementById('trustedIcon').value = t.shield.trusted.icon || '✓';
+          document.getElementById('trustedColor').value = t.shield.trusted.color || '#047857';
+          document.getElementById('trustedBg').value = t.shield.trusted.bg || '#d1fae5';
+          document.getElementById('trustedBorder').value = t.shield.trusted.border || '1px solid #059669';
+        }
+        if (t.shield?.risk) {
+          document.getElementById('riskLabel').value = t.shield.risk.label || 'Atenção';
+          document.getElementById('riskIcon').value = t.shield.risk.icon || '⚠';
+          document.getElementById('riskColor').value = t.shield.risk.color || '#b45309';
+          document.getElementById('riskBg').value = t.shield.risk.bg || '#fffbeb';
+          document.getElementById('riskBorder').value = t.shield.risk.border || '1px solid #f59e0b';
+        }
+        if (t.votePanel) {
+          document.getElementById('voteTitle').value = t.votePanel.title || 'Verificação da Comunidade';
+          document.getElementById('posLabel').value = t.votePanel.positiveLabel || 'Parece Seguro';
+          document.getElementById('posIcon').value = t.votePanel.positiveIcon || '👍';
+          document.getElementById('posColor').value = t.votePanel.positiveColor || '#047857';
+          document.getElementById('negLabel').value = t.votePanel.negativeLabel || 'Suspeito';
+          document.getElementById('negIcon').value = t.votePanel.negativeIcon || '⚠';
+          document.getElementById('negColor').value = t.votePanel.negativeColor || '#b91c1c';
+          document.getElementById('buttonRadius').value = t.votePanel.buttonRadius || '6px';
+        }
+        document.getElementById('chkScore').checked = t.showScore !== false;
+        document.getElementById('chkPowered').checked = t.showPoweredBy !== false;
+      }
+
+      updateLivePreview();
+    });
+  </script>
+</body>
+</html>

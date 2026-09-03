@@ -1,0 +1,340 @@
+﻿<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vote Panel Designer — Nettuno B2B Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .designer-layout{display:grid;grid-template-columns:380px 1fr;gap:24px;align-items:start}
+    @media(max-width:1100px){.designer-layout{grid-template-columns:1fr}}
+    .ctrl-panel{background:var(--card-bg);border:1px solid var(--card-bd);border-radius:var(--r-md);overflow:hidden;position:sticky;top:24px}
+    .ctrl-tabs{display:flex;background:rgba(0,0,0,.3);border-bottom:1px solid var(--card-bd)}
+    .ctrl-tab{flex:1;padding:12px 6px;font-size:11px;font-weight:700;color:var(--muted);background:none;border:none;cursor:pointer;font-family:var(--font-main);transition:all .15s;border-bottom:2px solid transparent;letter-spacing:.02em}
+    .ctrl-tab.active{color:#fff;border-bottom-color:var(--neptune-2);background:rgba(42,111,240,.08)}
+    .ctrl-body{padding:20px;display:flex;flex-direction:column;gap:14px;max-height:calc(100vh - 160px);overflow-y:auto}
+    .ctrl-st{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700;margin-bottom:2px}
+    .ctrl-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .ctrl-field{display:flex;flex-direction:column;gap:5px}
+    .ctrl-field label{font-size:11px;color:var(--fg-dim);font-weight:600}
+    .ctrl-field input[type=text],.ctrl-field input[type=number],.ctrl-field select{background:rgba(0,0,0,.4);border:1px solid var(--card-bd);color:var(--fg);border-radius:var(--r-sm);padding:7px 10px;font-size:12px;font-family:var(--font-mono);outline:none;transition:border-color .15s;width:100%;box-sizing:border-box}
+    .ctrl-field input:focus,.ctrl-field select:focus{border-color:var(--neptune-2)}
+    .cr{display:flex;align-items:center;gap:6px}
+    .cprev{width:30px;height:30px;border-radius:6px;border:1px solid rgba(255,255,255,.15);cursor:pointer;flex-shrink:0}
+    .ciw{position:relative;flex:1}
+    .ciw input[type=text]{width:100%}
+    input[type=color]{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:20px;height:20px;padding:0;border:none;background:none;cursor:pointer}
+    .ctrl-sep{height:1px;background:var(--card-bd);margin:2px 0}
+    .preview-wrapper{display:flex;flex-direction:column;gap:20px}
+    .preview-device{background:#09102a;border:1px solid var(--card-bd);border-radius:var(--r-md);overflow:hidden}
+    .pdb{display:flex;align-items:center;gap:6px;padding:10px 14px;background:rgba(0,0,0,.4);border-bottom:1px solid var(--card-bd)}
+    .pdd{width:10px;height:10px;border-radius:50%}
+    .pdu{flex:1;font-size:11px;font-family:var(--font-mono);color:var(--muted);background:rgba(0,0,0,.3);border-radius:4px;padding:3px 8px;text-align:center}
+    .code-export{background:var(--card-bg);border:1px solid var(--card-bd);border-radius:var(--r-md);overflow:hidden}
+    .ceh{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:rgba(0,0,0,.3);border-bottom:1px solid var(--card-bd)}
+    .code-export pre{padding:18px;margin:0;font-size:12px;font-family:var(--font-mono);color:var(--cyan);line-height:1.7;overflow-x:auto;max-height:260px;overflow-y:auto}
+    .state-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+    .sbtn{padding:6px 8px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.05);border:1px solid var(--card-bd);color:var(--muted);transition:all .15s;font-family:var(--font-mono)}
+    .sbtn.active{background:rgba(42,111,240,.2);border-color:var(--neptune-2);color:#fff}
+  </style>
+</head>
+<body>
+<div class="atmos"></div>
+<div class="dash-app">
+  <div id="sidebar-slot"></div>
+  <main class="dash-main">
+
+    <div class="page-header">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+          <h1 class="page-title">Vote Panel Designer</h1>
+          <span class="dash-badge">BETA SHIELD</span>
+        </div>
+        <p class="page-sub">Customize a janela de votos em tempo real — botoes, cores, textos — e copie o CSS pronto para o vosso marketplace.</p>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-secondary" onclick="resetDefaults()">Restaurar</button>
+        <button class="btn-primary" onclick="copyAllCode()">Copiar CSS + SDK</button>
+      </div>
+    </div>
+
+    <div class="designer-layout">
+
+      <!-- CONTROLES -->
+      <div class="ctrl-panel">
+        <div class="ctrl-tabs">
+          <button class="ctrl-tab active" onclick="stab('botoes',this)">Botoes</button>
+          <button class="ctrl-tab" onclick="stab('painel',this)">Painel</button>
+          <button class="ctrl-tab" onclick="stab('textos',this)">Textos</button>
+          <button class="ctrl-tab" onclick="stab('shield',this)">Shield</button>
+        </div>
+
+        <!-- TAB BOTOES -->
+        <div class="ctrl-body" id="tab-botoes">
+          <div class="ctrl-st">Botao Positivo</div>
+          <div class="ctrl-field"><label>Fundo</label><div class="cr"><div class="cprev" id="prev-btnPosBg" onclick="document.getElementById('clr-btnPosBg').click()"></div><div class="ciw"><input type="text" id="inp-btnPosBg" value="#dcfce7" oninput="syncC('btnPosBg',this.value)"><input type="color" id="clr-btnPosBg" value="#dcfce7" oninput="syncP('btnPosBg',this.value)"></div></div></div>
+          <div class="ctrl-row">
+            <div class="ctrl-field"><label>Texto</label><div class="cr"><div class="cprev" id="prev-btnPosText" onclick="document.getElementById('clr-btnPosText').click()" style="width:26px;height:26px;"></div><input type="color" id="clr-btnPosText" value="#14532d" oninput="syncP('btnPosText',this.value)" style="position:static;width:auto;height:auto;"><input type="text" id="inp-btnPosText" value="#14532d" oninput="syncC('btnPosText',this.value)" style="flex:1;"></div></div>
+            <div class="ctrl-field"><label>Borda</label><div class="cr"><div class="cprev" id="prev-btnPosBorder" onclick="document.getElementById('clr-btnPosBorder').click()" style="width:26px;height:26px;"></div><input type="color" id="clr-btnPosBorder" value="#16a34a" oninput="syncP('btnPosBorder',this.value)" style="position:static;width:auto;height:auto;"><input type="text" id="inp-btnPosBorder" value="#16a34a" oninput="syncC('btnPosBorder',this.value)" style="flex:1;"></div></div>
+          </div>
+          <div class="ctrl-sep"></div>
+          <div class="ctrl-st">Botao Negativo</div>
+          <div class="ctrl-field"><label>Fundo</label><div class="cr"><div class="cprev" id="prev-btnNegBg" onclick="document.getElementById('clr-btnNegBg').click()"></div><div class="ciw"><input type="text" id="inp-btnNegBg" value="#fee2e2" oninput="syncC('btnNegBg',this.value)"><input type="color" id="clr-btnNegBg" value="#fee2e2" oninput="syncP('btnNegBg',this.value)"></div></div></div>
+          <div class="ctrl-row">
+            <div class="ctrl-field"><label>Texto</label><div class="cr"><div class="cprev" id="prev-btnNegText" onclick="document.getElementById('clr-btnNegText').click()" style="width:26px;height:26px;"></div><input type="color" id="clr-btnNegText" value="#7f1d1d" oninput="syncP('btnNegText',this.value)" style="position:static;width:auto;height:auto;"><input type="text" id="inp-btnNegText" value="#7f1d1d" oninput="syncC('btnNegText',this.value)" style="flex:1;"></div></div>
+            <div class="ctrl-field"><label>Borda</label><div class="cr"><div class="cprev" id="prev-btnNegBorder" onclick="document.getElementById('clr-btnNegBorder').click()" style="width:26px;height:26px;"></div><input type="color" id="clr-btnNegBorder" value="#dc2626" oninput="syncP('btnNegBorder',this.value)" style="position:static;width:auto;height:auto;"><input type="text" id="inp-btnNegBorder" value="#dc2626" oninput="syncC('btnNegBorder',this.value)" style="flex:1;"></div></div>
+          </div>
+          <div class="ctrl-sep"></div>
+          <div class="ctrl-st">Geometria</div>
+          <div class="ctrl-row">
+            <div class="ctrl-field"><label>Border Radius</label><input type="text" id="inp-btnRadius" value="8px" oninput="renderPanel()"></div>
+            <div class="ctrl-field"><label>Font Size</label><input type="text" id="inp-btnFontSize" value="13px" oninput="renderPanel()"></div>
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-field"><label>Padding Vertical</label><input type="text" id="inp-btnPadV" value="11px" oninput="renderPanel()"></div>
+            <div class="ctrl-field"><label>Font Weight</label><select id="inp-btnFontWeight" onchange="renderPanel()"><option value="500">500</option><option value="600">600</option><option value="700" selected>700</option><option value="800">800</option></select></div>
+          </div>
+          <div class="ctrl-sep"></div>
+          <div class="ctrl-st">Icones</div>
+          <div class="ctrl-row">
+            <div class="ctrl-field"><label>Icone Positivo</label><input type="text" id="inp-iconPos" value="👍" oninput="renderPanel()"></div>
+            <div class="ctrl-field"><label>Icone Negativo</label><input type="text" id="inp-iconNeg" value="⚠️" oninput="renderPanel()"></div>
+          </div>
+        </div>
+
+        <!-- TAB PAINEL -->
+        <div class="ctrl-body" id="tab-painel" style="display:none;">
+          <div class="ctrl-st">Cores do Painel</div>
+          <div class="ctrl-field"><label>Fundo do Painel</label><div class="cr"><div class="cprev" id="prev-panelBg" onclick="document.getElementById('clr-panelBg').click()"></div><div class="ciw"><input type="text" id="inp-panelBg" value="#ffffff" oninput="syncC('panelBg',this.value)"><input type="color" id="clr-panelBg" value="#ffffff" oninput="syncP('panelBg',this.value)"></div></div></div>
+          <div class="ctrl-field"><label>Fundo do Cabecalho</label><div class="cr"><div class="cprev" id="prev-panelHeader" onclick="document.getElementById('clr-panelHeader').click()"></div><div class="ciw"><input type="text" id="inp-panelHeader" value="#f8fafc" oninput="syncC('panelHeader',this.value)"><input type="color" id="clr-panelHeader" value="#f8fafc" oninput="syncP('panelHeader',this.value)"></div></div></div>
+          <div class="ctrl-sep"></div>
+          <div class="ctrl-st">Borda e Layout</div>
+          <div class="ctrl-row">
+            <div class="ctrl-field"><label>Radius</label><input type="text" id="inp-panelRadius" value="12px" oninput="renderPanel()"></div>
+            <div class="ctrl-field"><label>Cor da Borda</label><div class="cr"><div class="cprev" id="prev-panelBorder" onclick="document.getElementById('clr-panelBorder').click()" style="width:26px;height:26px;"></div><input type="color" id="clr-panelBorder" value="#e2e8f0" oninput="syncP('panelBorder',this.value)" style="position:static;width:auto;height:auto;"><input type="text" id="inp-panelBorder" value="#e2e8f0" oninput="syncC('panelBorder',this.value)" style="flex:1;"></div></div>
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-field"><label>Espessura Borda</label><input type="text" id="inp-panelBorderW" value="1px" oninput="renderPanel()"></div>
+            <div class="ctrl-field"><label>Sombra</label><select id="inp-panelShadow" onchange="renderPanel()"><option value="none">Nenhuma</option><option value="0 2px 8px rgba(0,0,0,0.08)">Suave</option><option value="0 4px 20px rgba(0,0,0,0.12)" selected>Media</option><option value="0 8px 40px rgba(0,0,0,0.22)">Forte</option></select></div>
+          </div>
+          <div class="ctrl-sep"></div>
+          <div class="ctrl-st">Tipografia</div>
+          <div class="ctrl-row">
+            <div class="ctrl-field"><label>Cor do Titulo</label><div class="cr"><div class="cprev" id="prev-titleColor" onclick="document.getElementById('clr-titleColor').click()" style="width:26px;height:26px;"></div><input type="color" id="clr-titleColor" value="#0f172a" oninput="syncP('titleColor',this.value)" style="position:static;width:auto;height:auto;"><input type="text" id="inp-titleColor" value="#0f172a" oninput="syncC('titleColor',this.value)" style="flex:1;"></div></div>
+            <div class="ctrl-field"><label>Cor Secundaria</label><div class="cr"><div class="cprev" id="prev-subColor" onclick="document.getElementById('clr-subColor').click()" style="width:26px;height:26px;"></div><input type="color" id="clr-subColor" value="#64748b" oninput="syncP('subColor',this.value)" style="position:static;width:auto;height:auto;"><input type="text" id="inp-subColor" value="#64748b" oninput="syncC('subColor',this.value)" style="flex:1;"></div></div>
+          </div>
+          <div class="ctrl-field"><label>Font Family</label><select id="inp-panelFont" onchange="renderPanel()"><option value="'Inter', system-ui, sans-serif" selected>Inter</option><option value="system-ui, sans-serif">System UI</option><option value="Georgia, serif">Georgia</option><option value="monospace">Monospace</option></select></div>
+        </div>
+
+        <!-- TAB TEXTOS -->
+        <div class="ctrl-body" id="tab-textos" style="display:none;">
+          <div class="ctrl-st">Titulo e Subtitulo</div>
+          <div class="ctrl-field"><label>Titulo</label><input type="text" id="inp-titleText" value="Este anuncio e de confianca?" oninput="renderPanel()"></div>
+          <div class="ctrl-field"><label>Subtitulo</label><input type="text" id="inp-subText" value="De a sua opiniao e ajude a comunidade." oninput="renderPanel()"></div>
+          <div class="ctrl-sep"></div>
+          <div class="ctrl-st">Botao Positivo</div>
+          <div class="ctrl-row">
+            <div class="ctrl-field"><label>Texto</label><input type="text" id="inp-posLabel" value="Parece Seguro" oninput="renderPanel()"></div>
+            <div class="ctrl-field"><label>Confirmacao</label><input type="text" id="inp-posConfirm" value="Voto registado!" oninput="renderPanel()"></div>
+          </div>
+          <div class="ctrl-sep"></div>
+          <div class="ctrl-st">Botao Negativo</div>
+          <div class="ctrl-row">
+            <div class="ctrl-field"><label>Texto</label><input type="text" id="inp-negLabel" value="Parece Suspeito" oninput="renderPanel()"></div>
+            <div class="ctrl-field"><label>Confirmacao</label><input type="text" id="inp-negConfirm" value="Denuncia enviada!" oninput="renderPanel()"></div>
+          </div>
+          <div class="ctrl-sep"></div>
+          <div class="ctrl-st">Rodape</div>
+          <div class="ctrl-field"><label>Powered by</label><input type="text" id="inp-poweredBy" value="Powered by Nettuno" oninput="renderPanel()"></div>
+          <div class="ctrl-field"><label>Nota de Privacidade</label><input type="text" id="inp-privacyNote" value="O voto e anonimo e ponderado." oninput="renderPanel()"></div>
+        </div>
+
+        <!-- TAB SHIELD -->
+        <div class="ctrl-body" id="tab-shield" style="display:none;">
+          <div class="ctrl-st">Simular Estado</div>
+          <div class="state-btns">
+            <button class="sbtn active" onclick="setShieldState('SAFE',this)">SAFE</button>
+            <button class="sbtn" onclick="setShieldState('TRUSTED',this)">TRUSTED</button>
+            <button class="sbtn" onclick="setShieldState('RISK',this)">RISK</button>
+            <button class="sbtn" onclick="setShieldState('PENDING',this)">PENDING</button>
+            <button class="sbtn" onclick="setShieldState('ANALYSIS_STALE',this)">STALE</button>
+            <button class="sbtn" onclick="setShieldState('ANALYSIS_UNAVAILABLE',this)">N/A</button>
+          </div>
+          <div class="ctrl-sep"></div>
+          <div class="ctrl-st">Cores Badge SAFE</div>
+          <div class="ctrl-row">
+            <div class="ctrl-field"><label>Fundo</label><div class="cr"><div class="cprev" id="prev-safeBg" onclick="document.getElementById('clr-safeBg').click()" style="width:26px;height:26px;"></div><input type="color" id="clr-safeBg" value="#ecfdf5" oninput="syncP('safeBg',this.value)" style="position:static;width:auto;height:auto;"><input type="text" id="inp-safeBg" value="#ecfdf5" oninput="syncC('safeBg',this.value)" style="flex:1;"></div></div>
+            <div class="ctrl-field"><label>Texto</label><div class="cr"><div class="cprev" id="prev-safeText" onclick="document.getElementById('clr-safeText').click()" style="width:26px;height:26px;"></div><input type="color" id="clr-safeText" value="#059669" oninput="syncP('safeText',this.value)" style="position:static;width:auto;height:auto;"><input type="text" id="inp-safeText" value="#059669" oninput="syncC('safeText',this.value)" style="flex:1;"></div></div>
+          </div>
+          <div class="ctrl-sep"></div>
+          <div class="ctrl-st">Layout do Badge</div>
+          <div class="ctrl-row">
+            <div class="ctrl-field"><label>Border Radius</label><input type="text" id="inp-badgeRadius" value="6px" oninput="renderPanel()"></div>
+            <div class="ctrl-field"><label>Mostrar Score</label><select id="inp-showScore" onchange="renderPanel()"><option value="true" selected>Sim</option><option value="false">Nao</option></select></div>
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-field"><label>Mostrar Powered by</label><select id="inp-showPowered" onchange="renderPanel()"><option value="true" selected>Sim</option><option value="false">Nao</option></select></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PREVIEW -->
+      <div class="preview-wrapper">
+        <div class="preview-device">
+          <div class="pdb">
+            <div class="pdd" style="background:#ff5f57;"></div>
+            <div class="pdd" style="background:#febc2e;"></div>
+            <div class="pdd" style="background:#28c840;"></div>
+            <div class="pdu">https://marketplace.exemplo.com/anuncio/123</div>
+          </div>
+          <div style="padding:24px;background:#f8fafc;">
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:16px;display:flex;gap:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+              <div style="width:80px;height:80px;background:#f1f5f9;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:32px;">📱</div>
+              <div style="flex:1;"><div style="font-size:16px;font-weight:700;color:#0f172a;margin-bottom:4px;">Samsung 65" QLED 4K</div><div style="font-size:22px;font-weight:800;color:#0f172a;margin-bottom:6px;">420 €</div><div style="font-size:12px;color:#64748b;">Setubal . ha 10h</div></div>
+            </div>
+            <div style="margin-bottom:14px;"><div style="font-size:11px;color:#94a3b8;margin-bottom:6px;font-weight:600;text-transform:uppercase;">Verificacao Nettuno</div><div id="previewShieldSlot" style="display:inline-block;"></div></div>
+            <div id="livePanel"></div>
+          </div>
+        </div>
+
+        <div class="code-export">
+          <div class="ceh"><div style="font-size:13px;font-weight:700;">CSS Gerado</div><button class="btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="copyAllCode()">Copiar</button></div>
+          <pre id="codeOutput"></pre>
+        </div>
+
+        <div class="code-export">
+          <div class="ceh"><div style="font-size:13px;font-weight:700;">Integracao SDK</div><button class="btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="copySdkCode()">Copiar</button></div>
+          <pre id="sdkOutput"></pre>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="../sdk/nettuno.js"></script>
+<script src="_auth.js"></script>
+<script src="_ui.js"></script>
+<script>
+renderLayout('vote-panel');
+let SS='SAFE';
+
+function stab(n,b){
+  document.querySelectorAll('.ctrl-body').forEach(e=>e.style.display='none');
+  document.querySelectorAll('.ctrl-tab').forEach(e=>e.classList.remove('active'));
+  document.getElementById('tab-'+n).style.display='flex';b.classList.add('active');
+}
+function setShieldState(s,b){SS=s;document.querySelectorAll('.sbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderPanel();}
+function syncC(k,v){const c=document.getElementById('clr-'+k);const p=document.getElementById('prev-'+k);try{if(c)c.value=v;}catch(e){}if(p)p.style.background=v;renderPanel();}
+function syncP(k,v){const i=document.getElementById('inp-'+k);const p=document.getElementById('prev-'+k);if(i)i.value=v;if(p)p.style.background=v;renderPanel();}
+function g(id){const e=document.getElementById(id);return e?e.value.trim():'';}
+function initPreviews(){document.querySelectorAll('[id^="clr-"]').forEach(c=>{const k=c.id.replace('clr-','');const p=document.getElementById('prev-'+k);if(p)p.style.background=c.value;});}
+
+function cfg(){return{btnPosBg:g('inp-btnPosBg'),btnPosText:g('inp-btnPosText'),btnPosBorder:g('inp-btnPosBorder'),btnNegBg:g('inp-btnNegBg'),btnNegText:g('inp-btnNegText'),btnNegBorder:g('inp-btnNegBorder'),btnRadius:g('inp-btnRadius')||'8px',btnFW:g('inp-btnFontWeight')||'700',btnPadV:g('inp-btnPadV')||'11px',btnFS:g('inp-btnFontSize')||'13px',iconPos:g('inp-iconPos')||'👍',iconNeg:g('inp-iconNeg')||'⚠️',panelBg:g('inp-panelBg'),panelHeader:g('inp-panelHeader'),panelRadius:g('inp-panelRadius')||'12px',panelBorder:g('inp-panelBorder'),panelBorderW:g('inp-panelBorderW')||'1px',panelShadow:g('inp-panelShadow'),titleColor:g('inp-titleColor'),subColor:g('inp-subColor'),panelFont:g('inp-panelFont'),titleText:g('inp-titleText')||'Este anuncio e de confianca?',subText:g('inp-subText')||'De a sua opiniao.',posLabel:g('inp-posLabel')||'Parece Seguro',posConfirm:g('inp-posConfirm')||'Voto registado!',negLabel:g('inp-negLabel')||'Parece Suspeito',negConfirm:g('inp-negConfirm')||'Denuncia enviada!',poweredBy:g('inp-poweredBy')||'Powered by Nettuno',privacyNote:g('inp-privacyNote')||'O voto e anonimo.',safeBg:g('inp-safeBg'),safeText:g('inp-safeText'),badgeRadius:g('inp-badgeRadius')||'6px',showScore:g('inp-showScore')!=='false',showPowered:g('inp-showPowered')!=='false'};}
+
+function renderPanel(){
+  const c=cfg();
+  const panelEl=document.getElementById('livePanel');
+  const votes={SAFE:[8,2],TRUSTED:[15,1],RISK:[2,12],PENDING:[3,3]}[SS]||[5,5];
+  const tot=votes[0]+votes[1];
+  const pct=tot>0?Math.round(votes[0]/tot*100):50;
+  const bs=`display:flex;align-items:center;justify-content:center;gap:7px;padding:${c.btnPadV} 12px;border:1.5px solid;border-radius:${c.btnRadius};font-size:${c.btnFS};font-weight:${c.btnFW};cursor:pointer;font-family:${c.panelFont};transition:all .12s;`;
+
+  panelEl.innerHTML=`<div style="background:${c.panelBg};border:${c.panelBorderW} solid ${c.panelBorder};border-radius:${c.panelRadius};box-shadow:${c.panelShadow};overflow:hidden;font-family:${c.panelFont};width:100%;box-sizing:border-box;">
+    <div style="background:${c.panelHeader};padding:14px 16px;border-bottom:${c.panelBorderW} solid ${c.panelBorder};">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+        <span style="font-size:14px;font-weight:800;color:${c.titleColor};">${c.titleText}</span>
+        <span style="font-size:10px;color:${c.subColor};font-weight:600;">${c.poweredBy}</span>
+      </div>
+      <div style="font-size:12px;color:${c.subColor};">${c.subText}</div>
+    </div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;gap:10px;align-items:center;">
+        <div style="flex:1;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;margin-bottom:5px;">
+            <span style="color:#16a34a;">${c.iconPos} ${votes[0]} positivos</span>
+            <span style="color:#dc2626;">${c.iconNeg} ${votes[1]} negativos</span>
+          </div>
+          <div style="height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#16a34a,#22c55e);border-radius:3px;"></div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:${c.subColor};font-weight:600;white-space:nowrap;">${tot} votos</div>
+      </div>
+      <div id="voteButtons" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button id="btnPos" type="button" style="${bs}background:${c.btnPosBg};color:${c.btnPosText};border-color:${c.btnPosBorder};" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+          <span>${c.iconPos}</span><span>${c.posLabel}</span>
+        </button>
+        <button id="btnNeg" type="button" style="${bs}background:${c.btnNegBg};color:${c.btnNegText};border-color:${c.btnNegBorder};" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+          <span>${c.iconNeg}</span><span>${c.negLabel}</span>
+        </button>
+      </div>
+      <div style="font-size:10px;color:${c.subColor};text-align:center;">🔒 ${c.privacyNote}</div>
+    </div>
+  </div>`;
+
+  panelEl.querySelector('#btnPos').onclick=()=>{document.getElementById('voteButtons').innerHTML=`<div style="text-align:center;padding:14px;font-weight:700;font-size:14px;color:#16a34a;background:#16a34a15;border-radius:8px;border:1px solid #16a34a40;grid-column:1/-1;">✓ ${c.posConfirm}</div>`;setTimeout(()=>renderPanel(),2200);};
+  panelEl.querySelector('#btnNeg').onclick=()=>{document.getElementById('voteButtons').innerHTML=`<div style="text-align:center;padding:14px;font-weight:700;font-size:14px;color:#dc2626;background:#dc262615;border-radius:8px;border:1px solid #dc262640;grid-column:1/-1;">✓ ${c.negConfirm}</div>`;setTimeout(()=>renderPanel(),2200);};
+
+  // Shield badge
+  const sm={SAFE:{i:'🛡️',l:'Seguro',bg:c.safeBg,co:c.safeText,bd:c.safeText,sc:82},TRUSTED:{i:'✓',l:'Confiável',bg:'#eff6ff',co:'#1d4ed8',bd:'#3b82f6',sc:94},RISK:{i:'⚠',l:'Atenção',bg:'#fef2f2',co:'#dc2626',bd:'#ef4444',sc:23},PENDING:{i:'⏳',l:'Em Verificação',bg:'#fffbeb',co:'#d97706',bd:'#f59e0b',sc:50},ANALYSIS_STALE:{i:'⏱',l:'Rev. Antiga',bg:'#f8fafc',co:'#64748b',bd:'#cbd5e1',sc:58},ANALYSIS_UNAVAILABLE:{i:'·',l:'Sem Dados',bg:'#f1f5f9',co:'#94a3b8',bd:'#e2e8f0',sc:50}};
+  const st=sm[SS]||sm.SAFE;
+  document.getElementById('previewShieldSlot').innerHTML=`<div style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:${c.badgeRadius};background:${st.bg};color:${st.co};border:1px solid ${st.bd};font-size:12px;font-weight:700;font-family:${c.panelFont};box-shadow:0 1px 3px rgba(0,0,0,.05);">${st.i} ${st.l}${c.showScore?' · '+st.sc:''}${c.showPowered?'<span style="font-size:9px;opacity:.6;margin-left:4px;font-weight:400;">'+c.poweredBy+'</span>':''}</div>`;
+
+  document.getElementById('codeOutput').textContent=genCSS(c);
+  document.getElementById('sdkOutput').textContent=genSDK(c);
+}
+
+function genCSS(c){return`.nettuno-vote-panel{--nettuno-font:${c.panelFont};--nettuno-radius:${c.panelRadius};--nettuno-card-bg:${c.panelBg};--nettuno-border:${c.panelBorder};font-family:var(--nettuno-font);background:var(--nettuno-card-bg);border:${c.panelBorderW} solid var(--nettuno-border);border-radius:var(--nettuno-radius);box-shadow:${c.panelShadow};}
+.nettuno-vote-btn--positive{background:${c.btnPosBg};color:${c.btnPosText};border-color:${c.btnPosBorder};border-radius:${c.btnRadius};font-size:${c.btnFS};font-weight:${c.btnFW};padding:${c.btnPadV} 12px;}
+.nettuno-vote-btn--negative{background:${c.btnNegBg};color:${c.btnNegText};border-color:${c.btnNegBorder};border-radius:${c.btnRadius};font-size:${c.btnFS};font-weight:${c.btnFW};padding:${c.btnPadV} 12px;}
+.nettuno-shield{--nettuno-radius:${c.badgeRadius};--nettuno-safe-bg:${c.safeBg};--nettuno-safe-color:${c.safeText};}`;}
+
+function genSDK(c){return`const nt = Nettuno.create({ apiKey: 'nt_live_...', lang: 'pt' });
+const shield = await nt.getShield('anuncio_123');
+nt.mountShield(
+  document.getElementById('shield-slot'),
+  shield,
+  {
+    showScore: ${c.showScore},
+    showPoweredBy: ${c.showPowered},
+    variables: {
+      '--nettuno-safe-bg': '${c.safeBg}',
+      '--nettuno-safe-color': '${c.safeText}',
+      '--nettuno-radius': '${c.badgeRadius}'
+    }
+  }
+);
+nt.mountVotePanel(
+  document.getElementById('vote-slot'),
+  'anuncio_123',
+  {
+    title: '${c.titleText}',
+    positiveLabel: '${c.posLabel}',
+    negativeLabel: '${c.negLabel}',
+    onVote: (type, id) => console.log('Voto:', type, id)
+  }
+);`;}
+
+function copyAllCode(){copyToClipboard(document.getElementById('codeOutput').textContent+'\n\n'+document.getElementById('sdkOutput').textContent,'CSS + SDK copiado!');}
+function copySdkCode(){copyToClipboard(document.getElementById('sdkOutput').textContent,'SDK copiado!');}
+
+function resetDefaults(){
+  const d={btnPosBg:'#dcfce7',btnPosText:'#14532d',btnPosBorder:'#16a34a',btnNegBg:'#fee2e2',btnNegText:'#7f1d1d',btnNegBorder:'#dc2626',btnRadius:'8px',btnFontSize:'13px',btnPadV:'11px',panelBg:'#ffffff',panelHeader:'#f8fafc',panelBorder:'#e2e8f0',panelRadius:'12px',titleColor:'#0f172a',subColor:'#64748b',safeBg:'#ecfdf5',safeText:'#059669',badgeRadius:'6px'};
+  Object.entries(d).forEach(([k,v])=>{const i=document.getElementById('inp-'+k);if(i)i.value=v;});
+  initPreviews();renderPanel();showToast('Valores restaurados.');
+}
+
+requireAuth((user,mkt)=>{
+  document.getElementById('userName').textContent=mkt.name||'Marketplace';
+  document.getElementById('userEmail').textContent=user.email;
+  initPreviews();renderPanel();
+});
+</script>
+</body>
+</html>

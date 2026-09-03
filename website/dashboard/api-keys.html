@@ -1,0 +1,211 @@
+﻿<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API Keys & Autenticação - Nettuno B2B SaaS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .key-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(0,0,0,0.3); border: 1px solid var(--card-bd);
+      padding: 16px 20px; border-radius: var(--r-md); margin-bottom: 12px;
+    }
+    .key-val {
+      font-family: var(--font-mono); font-size: 13px; color: var(--cyan); letter-spacing: 0.5px;
+    }
+    .key-meta {
+      font-size: 12px; color: var(--muted); display: flex; gap: 16px; margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="atmos"></div>
+
+  <div class="dash-app">
+    <div id="sidebar-slot"></div>
+
+    <main class="dash-main">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Gestão de API Keys</h1>
+          <p class="page-sub">Chaves de API autenticadas para integração no backend ou no client SDK do seu marketplace.</p>
+        </div>
+        <div>
+          <button class="btn-primary" id="btnCreateKey" onclick="createNewKey()">+ Gerar Nova API Key</button>
+        </div>
+      </div>
+
+      <!-- Alerta de Nova Chave -->
+      <div id="newKeyAlert" class="card-panel" style="display:none; border-color:var(--neptune-2); background:rgba(42,111,240,0.08);">
+        <div class="panel-title" style="color:#fff;">
+          <span>🔑 Nova API Key Criada com Sucesso</span>
+          <button class="btn-secondary" style="padding:4px 10px; font-size:11px;" onclick="closeNewKeyAlert()">Fechar</button>
+        </div>
+        <p style="font-size:13px; color:var(--fg-dim); margin:10px 0 14px;">
+          Copie a sua nova chave agora. Por motivos de segurança, ela <strong>não poderá ser exibida novamente</strong> por extenso.
+        </p>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <input type="text" id="newRawKeyInput" class="inp" readonly style="font-family:var(--font-mono); color:var(--cyan); font-weight:700;">
+          <button class="btn-primary" onclick="copyNewKey()">📋 Copiar</button>
+        </div>
+      </div>
+
+      <!-- Lista de Chaves Ativas -->
+      <div class="card-panel">
+        <div class="panel-title">
+          <span>Suas Chaves Ativas</span>
+          <span id="keyCount" style="font-size:12px; color:var(--muted); font-family:var(--font-mono);">0 chaves</span>
+        </div>
+
+        <div id="keysList" style="margin-top:16px;">
+          <div style="padding:20px; text-align:center; color:var(--muted); font-size:13px;">Carregando API Keys...</div>
+        </div>
+      </div>
+
+      <!-- Documentação da Autenticação -->
+      <div class="card-panel">
+        <div class="panel-title"><span>Como Autenticar Requisições</span></div>
+        <p style="font-size:13px; color:var(--fg-dim); line-height:1.6; margin-bottom:12px;">
+          Passe a sua API Key via Header <code>Authorization: Bearer nt_live_...</code> ou <code>X-API-Key: nt_live_...</code> em todas as chamadas para a Risk API V1.
+        </p>
+        <pre class="code-box">
+// Exemplo em cURL / HTTP Request:
+curl -H "X-API-Key: nt_live_YOUR_KEY" \
+     https://nettuno-e6036.web.app/v1/listings/ad_123/shield</pre>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
+  <script src="_auth.js"></script>
+  <script src="_ui.js"></script>
+
+  <script>
+    renderLayout('api-keys');
+
+    let currentUser = null;
+
+    async function loadKeys() {
+      const keysList = document.getElementById('keysList');
+      keysList.innerHTML = '';
+
+      if (!currentUser) return;
+
+      try {
+        let snap = null;
+        if (db) {
+          snap = await db.collection(`marketplaces/${currentUser.uid}/apiKeys`)
+            .where('status', '==', 'active')
+            .get();
+        }
+
+        if (snap && !snap.empty) {
+          document.getElementById('keyCount').textContent = `${snap.size} chave(s)`;
+          snap.forEach(doc => {
+            const data = doc.data();
+            const dateStr = data.createdAt ? new Date(data.createdAt).toLocaleDateString('pt-PT') : 'N/A';
+            const prefix = data.prefix || 'nt_live_...';
+
+            const row = document.createElement('div');
+            row.className = 'key-row';
+            row.innerHTML = `
+              <div>
+                <div class="key-val">${prefix}_••••••••</div>
+                <div class="key-meta">
+                  <span>${data.name || 'Sem nome'}</span>
+                  <span>Criada em: ${dateStr}</span>
+                  <span>Tipo: ${data.type || 'live'}</span>
+                  <span>Status: <strong style="color:var(--green);">Ativa</strong></span>
+                </div>
+              </div>
+              <button class="btn-secondary" style="color:var(--red); border-color:rgba(239,68,68,0.3);" onclick="revokeKey('${doc.id}')">Revogar</button>
+            `;
+            keysList.appendChild(row);
+          });
+        } else {
+          document.getElementById('keyCount').textContent = '0 chaves';
+          keysList.innerHTML = `
+            <div style="padding:32px 20px; text-align:center; color:var(--muted); font-size:13px;">
+              <div style="font-size:24px; margin-bottom:8px;">🔑</div>
+              <div>Ainda não gerou nenhuma API Key.</div>
+              <div style="font-size:11px; margin-top:4px;">Clique em "+ Gerar Nova API Key" acima para criar a primeira.</div>
+            </div>
+          `;
+        }
+
+      } catch (err) {
+        console.error('Erro ao carregar chaves:', err);
+        document.getElementById('keyCount').textContent = '—';
+        keysList.innerHTML = `
+          <div style="padding:32px 20px; text-align:center; color:var(--red); font-size:13px;">
+            Erro ao carregar as suas chaves. Tente recarregar a página.
+          </div>
+        `;
+      }
+    }
+
+    async function createNewKey() {
+      const btn = document.getElementById('btnCreateKey');
+      btn.disabled = true;
+      btn.textContent = 'Gerando...';
+
+      try {
+        if (!functions) {
+          showToast('Firebase Functions indisponível — recarregue a página.', true);
+          return;
+        }
+
+        const fn = functions.httpsCallable('provisionApiKey');
+        const res = await fn({ name: 'Chave de Produção' });
+
+        if (res.data && res.data.key) {
+          document.getElementById('newRawKeyInput').value = res.data.key;
+          document.getElementById('newKeyAlert').style.display = 'block';
+          showToast('Nova API Key gerada com sucesso!');
+          loadKeys();
+        } else {
+          showToast('Chave criada mas resposta inesperada do servidor.', true);
+        }
+      } catch (err) {
+        showToast(err.message || 'Erro ao gerar API Key', true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '+ Gerar Nova API Key';
+      }
+    }
+
+    function copyNewKey() {
+      copyToClipboard(document.getElementById('newRawKeyInput').value, 'API Key copiada para a área de transferência!');
+    }
+
+    function closeNewKeyAlert() {
+      document.getElementById('newKeyAlert').style.display = 'none';
+    }
+
+    async function revokeKey(keyId) {
+      if (!confirm('Tem certeza que deseja revogar esta API Key? Todas as requisições ativas usando esta chave serão bloqueadas.')) return;
+      try {
+        const fn = functions.httpsCallable('revokeApiKey');
+        await fn({ keyId });
+        showToast('API Key revogada com sucesso.');
+        loadKeys();
+      } catch (err) {
+        showToast(err.message || 'Erro ao revogar chave', true);
+      }
+    }
+
+    requireAuth((user, mkt) => {
+      currentUser = user;
+      document.getElementById('userName').textContent = mkt.name || 'Marketplace';
+      document.getElementById('userEmail').textContent = user.email;
+      loadKeys();
+    });
+  </script>
+</body>
+</html>

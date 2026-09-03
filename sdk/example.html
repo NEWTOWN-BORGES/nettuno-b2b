@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nettuno SDK — exemplo Shield</title>
+  <style>
+    body { font: 16px/1.4 system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; color: #0f172a; }
+    label, input, button { display: block; width: 100%; margin-top: 0.5rem; }
+    input { box-sizing: border-box; padding: 0.5rem; }
+    button { width: auto; margin-top: 1rem; padding: 0.5rem 1rem; }
+    #shield { margin-top: 1.5rem; min-height: 2rem; }
+    #vote { margin-top: 1rem; }
+    pre { background: #f1f5f9; padding: 0.75rem; overflow: auto; font-size: 12px; }
+    .hint { color: #64748b; font-size: 0.875rem; }
+  </style>
+</head>
+<body>
+  <h1>Nettuno Shield</h1>
+  <p class="hint">A chave não é gravada. Podes passá-la em <code>?key=</code> (só em local).</p>
+  <label>API URL
+    <input id="apiUrl" value="https://nettuno-e6036.web.app">
+  </label>
+  <label>API key
+    <input id="apiKey" type="password" autocomplete="off" placeholder="nt_live_…">
+  </label>
+  <label>Listing ID
+    <input id="listingId" value="olx_demo">
+  </label>
+  <button type="button" id="go">Ver Shield (0 créditos)</button>
+  <div id="shield"></div>
+  <div id="vote"></div>
+  <pre id="json"></pre>
+  <script src="nettuno.js"></script>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      if (params.get('key')) document.getElementById('apiKey').value = params.get('key');
+      if (params.get('url')) document.getElementById('apiUrl').value = params.get('url');
+      if (params.get('id')) document.getElementById('listingId').value = params.get('id');
+
+      document.getElementById('go').onclick = async function () {
+        var jsonEl = document.getElementById('json');
+        var shieldEl = document.getElementById('shield');
+        var voteEl = document.getElementById('vote');
+        jsonEl.textContent = '';
+        shieldEl.innerHTML = '';
+        voteEl.innerHTML = '';
+        try {
+          var listingId = document.getElementById('listingId').value.trim();
+          var nt = Nettuno.create({
+            apiUrl: document.getElementById('apiUrl').value.trim(),
+            apiKey: document.getElementById('apiKey').value.trim(),
+          });
+          // getShield/mountVotePanel nunca consomem créditos — só requestAnalysis() consome.
+          var shield = await nt.getShield(listingId);
+          nt.mountShield(shieldEl, shield);
+          nt.mountVotePanel(voteEl, listingId);
+          jsonEl.textContent = JSON.stringify(shield, null, 2);
+        } catch (err) {
+          jsonEl.textContent = String(err && err.message ? err.message : err);
+        }
+      };
+    })();
+  </script>
+</body>
+</html>

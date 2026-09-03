@@ -1,0 +1,130 @@
+﻿<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Visão Geral - Nettuno B2B SaaS Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="atmos"></div>
+
+  <div class="dash-app">
+    <div id="sidebar-slot"></div>
+
+    <main class="dash-main">
+      <div class="page-header">
+        <div>
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+            <h1 class="page-title" id="welcomeTitle">Painel do Marketplace</h1>
+            <span class="dash-badge" style="background:var(--yellow); color:#000;">BETA ADAPTIVE</span>
+          </div>
+          <p class="page-sub">Camada de confiança adaptativa: Shield ilimitado em milhões de anúncios com análise profunda sob demanda.</p>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <a href="playground.html" class="btn-secondary">⚙ Playground & CSS</a>
+          <a href="api-keys.html" class="btn-primary">+ Criar API Key</a>
+        </div>
+      </div>
+
+      <!-- Alerta de Quota (75%+) -->
+      <div id="quotaAlert" class="alert-warning" style="display:none;">
+        <span style="font-size:18px;">⚠️</span>
+        <div>
+          <strong>Aviso de Capacidade:</strong> Já consumiu <span id="quotaAlertPercent">0%</span> das Risk Units do seu plano. Os Shields continuam 100% ativos nos seus anúncios.
+          <a href="api-keys.html" style="color:#fff; font-weight:700; margin-left:8px; text-decoration:underline;">Gerir plano ↗</a>
+        </div>
+      </div>
+
+      <!-- Métricas Segregadas -->
+      <div class="grid-metrics">
+        <div class="metric-card">
+          <div class="metric-label">Anúncios com Shield</div>
+          <div class="metric-val" style="color:var(--cyan);" id="protectedListings">Ilimitado</div>
+          <div class="metric-sub">0 créditos por visualização</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Risk Units Consumidas</div>
+          <div class="metric-val" id="creditsUsed">-</div>
+          <div class="metric-sub" id="creditsRemaining">Restantes: -</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Interações Comunitárias</div>
+          <div class="metric-val" style="color:var(--yellow);" id="communityInteractions">Ativas</div>
+          <div class="metric-sub">Sensor distribuído (0 créditos)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Status da Infraestrutura</div>
+          <div class="metric-val" style="color:var(--green); font-size:18px; padding-top:4px;">● OPERACIONAL</div>
+          <div class="metric-sub">Europe West 1 • Latência: ~30ms</div>
+        </div>
+      </div>
+
+      <!-- Quota Cycle Card -->
+      <div class="card-panel">
+        <div class="panel-title">
+          <span>Consumo de Risk Units no Ciclo Atual</span>
+          <span id="quotaPercent" style="font-family:var(--font-mono); color:var(--cyan);">0%</span>
+        </div>
+        <div style="background:rgba(0,0,0,0.4); height:12px; border-radius:6px; overflow:hidden; margin:16px 0 10px; border:1px solid var(--card-bd);">
+          <div id="quotaBar" style="background:linear-gradient(90deg, var(--neptune), var(--cyan)); height:100%; width:0%; transition:width 0.6s ease;"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--muted); font-family:var(--font-mono);">
+          <span>0 unidades</span>
+          <span id="quotaLimitText">5.000 Risk Units</span>
+        </div>
+      </div>
+
+      <!-- Guia Rápido -->
+      <div class="card-panel">
+        <div class="panel-title">
+          <span>Como o Nettuno Protege Milhões de Anúncios</span>
+          <a href="docs.html" style="font-size:13px; color:var(--cyan); text-decoration:none;">Documentação técnica ↗</a>
+        </div>
+        <p style="font-size:13px; color:var(--fg-dim); line-height:1.6; margin-bottom:14px;">
+          O Nettuno Shield é montado em todos os anúncios do catálogo. A visualização consome <strong>0 créditos</strong>. O <code>signalEngine</code> e os votos da comunidade vigiam anomalias continuamente - apenas os anúncios que atingem limiares suspeitos são enfileirados para a Risk Analysis profunda.
+        </p>
+        <pre class="code-box">
+// Instalação do Shield com 0 créditos de consumo:
+const nettuno = Nettuno.create({ apiKey: 'nt_live_YOUR_KEY' });
+const shield = await nettuno.getShield('anuncio_123'); // 0 créditos
+nettuno.mountShield(document.getElementById('slot'), shield);</pre>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="_auth.js"></script>
+  <script src="_ui.js"></script>
+
+  <script>
+    renderLayout('overview');
+
+    requireAuth(async (user, mkt) => {
+      document.getElementById('userName').textContent = mkt.name || 'Marketplace';
+      document.getElementById('userEmail').textContent = user.email;
+      document.getElementById('welcomeTitle').textContent = `${mkt.name || 'Marketplace'} Overview`;
+
+      const planLimit = mkt.plan === 'startup' ? 50000 : (mkt.plan === 'growth' ? 250000 : 5000);
+      const used = (mkt.currentCycle && mkt.currentCycle.creditsUsed) || 0;
+      const remaining = Math.max(0, planLimit - used);
+      const percent = Math.min(100, Math.round((used / planLimit) * 100));
+
+      document.getElementById('creditsUsed').textContent = used.toLocaleString('pt-PT');
+      document.getElementById('creditsRemaining').textContent = `Restantes: ${remaining.toLocaleString('pt-PT')}`;
+      document.getElementById('quotaPercent').textContent = `${percent}%`;
+      document.getElementById('quotaBar').style.width = `${percent}%`;
+      document.getElementById('quotaLimitText').textContent = `${planLimit.toLocaleString('pt-PT')} Risk Units`;
+
+      if (percent >= 75) {
+        document.getElementById('quotaAlert').style.display = 'flex';
+        document.getElementById('quotaAlertPercent').textContent = `${percent}%`;
+      }
+    });
+  </script>
+</body>
+</html>
