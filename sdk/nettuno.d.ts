@@ -126,7 +126,7 @@ export interface NettunoClient {
   getShield(listingId: string): Promise<ShieldData>;
   batchShield(ids: string[]): Promise<{ results: ShieldData[]; count: number }>;
   vote(listingId: string, voteType: 'POSITIVE' | 'NEGATIVE', voterId?: string): Promise<{ ok: boolean }>;
-  /** Reporta um sinal granular de comunidade (0 créditos) — ver signals-data.js para o catálogo. */
+  /** Reporta um sinal granular de comunidade (0 créditos) — catálogo em SIGNAL_CATALOG (nettuno.js). */
   reportSignal(listingId: string, signal: string, phase: SignalPhase, options?: ReportSignalOptions): Promise<{ ok: boolean }>;
   requestAnalysis(listingId: string, listingData?: Record<string, any>): Promise<{ status: string; queuePosition?: number }>;
   /**

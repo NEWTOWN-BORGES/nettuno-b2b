@@ -105,10 +105,9 @@
     }
   };
 
-  // Catálogo `default` (Idealista/genérico) de apps/extension/scm-hunters-firebase/
-  // signals-data.js — os mesmos sinais que a extensão usa em qualquer plataforma sem
-  // catálogo próprio, e os mesmos que POST /v1/listings/{id}/signal aceita (ver
-  // functions/b2b/communitySignalCatalog.js — MANTER SINCRONIZADO).
+  // Catálogo genérico de sinais comunitários — aplica-se a qualquer marketplace,
+  // sem lógica por plataforma. Mesmo conjunto que POST /v1/listings/{id}/signal
+  // aceita (ver functions/b2b/communitySignalCatalog.js — MANTER SINCRONIZADO).
   const SIGNAL_CATALOG = {
     contact: [
       { signal: 'unrealistic_price', label: 'Preço fora da realidade', icon: '💰', positive: false, negative: false },
@@ -146,27 +145,21 @@
     { signal: 'redirect_outro', label: 'Outro', icon: '🔗', color: '#111827' }
   ];
 
-  // Cópia literal — última definição de uma chave repetida vence silenciosamente,
-  // tal como no ficheiro original (comportamento já em produção, preservado).
+  // Pares de sinais mutuamente exclusivos: marcar um remove automaticamente o
+  // oposto, se estiver ativo (ex: "Atendeu chamada" desliga "Não atende").
   const CONTRADICTIONS = {
-    'answered_call': ['doesnt_answer', 'number_off_or_fake'],
     'doesnt_answer': ['answered_call'],
     'number_off_or_fake': ['answered_call'],
     'replied_messages': ['seen_no_reply'],
-    'seen_no_reply': ['replied_messages'],
     'visit_done': ['refused_visit'],
     'refused_visit': ['visit_done'],
     'answered_call': ['seen_no_reply'],
     'seen_no_reply': ['answered_call'],
-    'trusted_seller': ['new_account', 'fake_profile_pic', 'scam', 'lost_money', 'suspicious'],
-    'success': ['scam', 'lost_money', 'never_arrived', 'wrong_item', 'seller_vanished', 'suspicious', 'counterfeit_received', 'not_as_described'],
-    'scam': ['success', 'verified_seller'],
-    'lost_money': ['success', 'verified_seller'],
+    'trusted_seller': ['scam', 'lost_money', 'suspicious'],
+    'scam': ['success'],
+    'lost_money': ['success'],
     'suspicious': ['success'],
-    'as_described': ['wrong_item', 'never_arrived', 'counterfeit'],
-    'success': ['scam', 'lost_money', 'counterfeit', 'never_arrived'],
-    'counterfeit': ['as_described', 'success'],
-    'payment_outside': ['success', 'as_described']
+    'success': ['scam', 'lost_money']
   };
 
   function getSignalsForPhase(phase) {
@@ -269,9 +262,8 @@
   `;
 
   // Painel completo (clique no escudo) — réplica visual do painel real da extensão
-  // Nettuno (packages/nettuno-public/ui-renderer.js + apps/extension/scm-hunters-firebase/
-  // content.js linhas 1206-1981, a fonte de verdade em runtime). Mesmos nomes de classe
-  // `as-*`, mesmas cores/sombras/bordas — não é um redesenho.
+  // Nettuno. Mesmos nomes de classe `as-*`, mesmas cores/sombras/bordas — não é
+  // um redesenho.
   const PANEL_CSS = `
     [class^="as-"] { -webkit-font-smoothing: antialiased; box-sizing: border-box; }
 

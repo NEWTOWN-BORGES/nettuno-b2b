@@ -1,11 +1,10 @@
 /**
  * Allow-list server-side dos códigos de sinal que o endpoint POST /v1/listings/{id}/signal
- * aceita, por fase. É uma cópia deliberada do catálogo `default` (Idealista/genérico) de
- * apps/extension/scm-hunters-firebase/signals-data.js — os mesmos ~20 sinais que a extensão
- * usa para qualquer plataforma sem catálogo próprio.
+ * aceita, por fase. Catálogo genérico — aplica-se a qualquer marketplace, sem lógica por
+ * plataforma.
  *
- * MANTER SINCRONIZADO com packages/nettuno-sdk/panel-data.js (o SDK usa a mesma lista para
- * desenhar os cartões clicáveis das abas CONTACTO/INTERAÇÃO/RESULTADO).
+ * MANTER SINCRONIZADO com sdk/nettuno.js (SIGNAL_CATALOG) — o SDK usa a mesma lista para
+ * desenhar os cartões clicáveis das abas CONTACTO/INTERAÇÃO/RESULTADO.
  */
 'use strict';
 
