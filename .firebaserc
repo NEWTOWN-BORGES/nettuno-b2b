@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "nettuno-e6036"
-  }
+  },
+  "targets": {
+    "nettuno-e6036": {
+      "hosting": {
+        "dashboard": [
+          "nettuno-b2b"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
