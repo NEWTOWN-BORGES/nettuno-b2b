@@ -34,8 +34,26 @@ firebase deploy --only functions
 firebase deploy --only firestore:rules
 ```
 
-`firebase.json` não tem secção `hosting` de propósito — `firebase deploy`
-(sem `--only`) nunca toca no hosting a partir daqui, mesmo por engano.
+`firebase.json` tem uma secção `hosting` própria, com **target explícito**
+(`"target": "dashboard"`), por isso um `firebase deploy` (sem `--only`)
+também publica o dashboard — mas sempre no site `nettuno-b2b`, nunca no
+principal (são sites diferentes dentro do mesmo projeto; um nunca
+substitui o outro).
+
+```
+firebase deploy --only hosting:dashboard
+```
+
+Publica o dashboard em **https://nettuno-b2b.web.app** (Hosting site
+`nettuno-b2b`, criado com `firebase hosting:sites:create` e ligado ao target
+`dashboard` via `firebase target:apply hosting dashboard nettuno-b2b` — isto
+já está feito, o `.firebaserc` tem o mapeamento). O SDK público continua a
+ser servido pelo site principal (`https://nettuno-e6036.web.app/sdk/
+nettuno.js`), a partir do `SCM-HUNTERS` (`website/sdk/nettuno.js` lá é uma
+cópia deliberada — ver nota abaixo). Os ficheiros do dashboard que antes
+tinham caminhos relativos a assumir a mesma raiz de hosting que o `sdk/`
+(`../sdk/nettuno.js`, `../index.html`) foram trocados por URLs absolutas
+para `nettuno-e6036.web.app`.
 
 **`firestore.rules` é uma cópia** do ficheiro único e partilhado do projeto
 Firebase (users/, votes/, ads/, config/... do B2C + marketplaces/... do B2B
@@ -45,16 +63,11 @@ sítio a partir de onde as rules são de facto publicadas** — se voltares a
 editar `marketplaces/{uid}` ou similares no `SCM-HUNTERS`, replica a mudança
 aqui antes de fazer deploy (ou vice-versa). Não há sincronização automática.
 
-**Hosting (dashboard em `/dashboard/...`, SDK em `/sdk/...`) fica de fora**
-deste `firebase.json` — decisão adiada. O `website/` original (site
-principal, privacy, help/support) só existe no `SCM-HUNTERS`, e um
-`firebase deploy --only hosting` a partir de qualquer um dos dois
-checkouts substitui TODO o conteúdo do hosting pelo que existir localmente
-nesse checkout — não faz merge entre os dois. Servir os dois em simultâneo
-sem um wipe acidental do site principal precisa de um Firebase Hosting
-"site"/target dedicado para o B2B, ou de trazer `website/dashboard` e `sdk/`
-de volta para o checkout do site principal só para efeitos de build/deploy.
-Ainda por decidir.
+**`website/sdk/nettuno.js` no `SCM-HUNTERS`** é a mesma história: cópia
+deliberada de `sdk/nettuno.js` daqui, só para o site principal poder
+continuar a servir `/sdk/nettuno.js` sem depender deste repositório no
+deploy. Ao alterar `sdk/nettuno.js` aqui, copia também para lá antes do
+próximo `firebase deploy --only hosting` do `SCM-HUNTERS`.
 
 ## Testes
 
