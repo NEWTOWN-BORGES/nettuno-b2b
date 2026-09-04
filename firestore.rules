@@ -1,0 +1,169 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ────────────────────────────────────────────────────────────
+    // Helpers de validação de campos (anti-manipulação de reputação)
+    // ────────────────────────────────────────────────────────────
+
+    // Verdadeiro se `field` não está a ser escrito OU mantém o valor anterior.
+    // Usado para campos que o cliente NUNCA deve alterar (ex: accuracyRate,
+    // calculado server-side / Admin SDK).
+    function unchanged(field) {
+      return !(field in request.resource.data)
+        || ( (field in resource.data)
+             && request.resource.data[field] == resource.data[field] );
+    }
+
+    // Verdadeiro se o contador `field` não é escrito, ou é monotónico e só sobe
+    // no máximo +1 por escrita (o fluxo de voto legítimo incrementa 0 ou 1).
+    // Bloqueia inflação (set 99999) E regressão (descer o contador) pelo cliente.
+    function counterCapped(field) {
+      return !(field in request.resource.data)
+        || ( (field in resource.data)
+             ? ( request.resource.data[field] >= resource.data[field]
+                 && request.resource.data[field] <= resource.data[field] + 1 )
+             : ( request.resource.data[field] >= 0
+                 && request.resource.data[field] <= 1 ) );
+    }
+
+    // Admin — acesso de leitura total ao dashboard.
+    // Restrito por custom claim `admin` (definida server-side via Admin SDK).
+    // Não usar email hardcoded: evita expor dados pessoais e é mais robusto.
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.admin == true;
+    }
+
+    // ────────────────────────────────────────────────────────────
+    // User profiles
+    // Leitura/escrita só do próprio doc (ou admin para o dashboard).
+    // Reputação protegida:
+    //   - accuracyRate: imutável pelo cliente (server-only)
+    //   - voteCount / signalCount: só +1 por escrita (anti-inflação)
+    // (Endurecimento contínuo: escritas de reputação a migrar para o servidor.)
+    // ────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read:   if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null
+                    && request.auth.uid == userId
+                    && unchanged('accuracyRate')
+                    && counterCapped('voteCount')
+                    && counterCapped('signalCount');
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Votos — leitura pública (avatares/contadores no painel).
+    match /votes/{voteId} {
+      allow read:   if true;
+      // Votos são escritos APENAS pelo servidor (submitVote, via Admin SDK, que
+      // ignora estas regras). O cliente já não escreve votos diretamente — isto
+      // impede a forja de votos/reputação.
+      allow write:  if false;
+    }
+
+    // Analytics de sinais — leitura e escrita autenticadas.
+    match /signals_analytics/{doc} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Estatísticas diárias por plataforma
+    match /platform_daily/{doc} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Config aprendida (pesos heurísticos + baselines de preço).
+    // Leitura pública (a extensão lê sem login). Escrita só server-side
+    // (Cloud Functions com Admin SDK ignoram estas regras) — cliente nunca escreve.
+    match /config/{doc} {
+      allow read:  if true;
+      allow write: if false;
+    }
+
+    // Resumo global — leitura pública, escrita autenticada
+    match /global_summary/{doc} {
+      allow read:  if true;
+      allow write: if request.auth != null;
+    }
+
+    // Ads — leitura pública (badges visíveis sem login).
+    // Campos de VOTO/CONFIANÇA são escritos APENAS pelo servidor (submitVote via
+    // Admin SDK, que ignora estas regras). O cliente só pode escrever campos de
+    // SINAIS (recordSignal: fraudScore, signals, lastSignal, sellerFingerprint...).
+    // Bloquear o cliente de tocar nos campos de confiança fecha a forja de
+    // reputação (ex.: marcar uma burla como "de confiança" via effectiveLikes).
+    match /ads/{adId} {
+      allow read:  if true;
+      allow create: if request.auth != null
+                    && !request.resource.data.keys()
+                         .hasAny(['likes','dislikes','uniqueUsers','effectiveLikes','effectiveDislikes','score','weightedScore','trustState','wPos','wNeg','total','votes']);
+      allow update: if request.auth != null
+                    && !request.resource.data.diff(resource.data).affectedKeys()
+                         .hasAny(['likes','dislikes','uniqueUsers','effectiveLikes','effectiveDislikes','score','weightedScore','trustState','wPos','wNeg','total','votes']);
+    }
+
+    // Eventos do utilizador por anúncio (userEvents/{uid}_{adId}) — guarda o
+    // estado dos sinais/votos que o utilizador marcou. Escrito por recordSignal.
+    match /userEvents/{id} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Sellers — fingerprint cross-anúncio do vendedor. Escrito por recordSignal/vote.
+    match /sellers/{id} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Events — log append-only de eventos (sinais) para treino/analytics.
+    match /events/{id} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // API keys B2B e rate-limit — só Admin SDK (Cloud Functions).
+    match /apiKeys/{id} {
+      allow read, write: if false;
+    }
+    match /apiKeyRate/{id} {
+      allow read, write: if false;
+    }
+
+    // Portal B2B — Marketplaces, API Keys e Planos
+    match /marketplaces/{uid} {
+      allow read:   if isAdmin() || (request.auth != null && request.auth.uid == uid);
+      // Criação só server-side (registerCompany / ensureMarketplaceAccount, Admin
+      // SDK — ignora Rules). Bloqueado ao cliente porque um create direto permitia
+      // a qualquer conta autoatribuir-se plan/status à vontade na criação.
+      allow create: if false;
+      // Plano/quota/créditos só via server/admin. O dono pode alterar o seu tema
+      // de marca e as origens CORS permitidas na Risk API — nunca campos de
+      // faturação/quota. allowedOrigins é validado como lista de até 10 strings
+      // (a apiV1 sanitiza de novo na leitura — nunca confiar só na regra).
+      allow update: if isAdmin()
+        || ( request.auth != null && request.auth.uid == uid
+             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['theme', 'allowedOrigins', 'updatedAt'])
+             && ( !('allowedOrigins' in request.resource.data)
+                  || (request.resource.data.allowedOrigins is list && request.resource.data.allowedOrigins.size() <= 10) ) );
+      allow delete: if false;
+
+      match /apiKeys/{keyId} {
+        allow read:  if isAdmin() || (request.auth != null && request.auth.uid == uid);
+        allow write: if false; // criação/revogação só via provisionApiKey / revokeApiKey
+      }
+
+      match /logs/{logId} {
+        allow read:  if isAdmin() || (request.auth != null && request.auth.uid == uid);
+        allow write: if false; // escrito apenas server-side pela apiV1
+      }
+    }
+
+    match /plans/{planId} {
+      allow read:  if request.auth != null;
+      allow write: if false;
+    }
+  }
+}

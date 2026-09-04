@@ -24,18 +24,37 @@ propósito do `SCM-HUNTERS` (extensão/comunidade B2C) e do `nettuno-extension`
 - `vedix-demo/` — marketplace de referência para teste end-to-end da
   integração real do SDK.
 
-## O que NÃO está aqui
+## Deploy
 
-- `firestore.rules` — vive no repositório de deploy (`SCM-HUNTERS`), porque
-  é um ficheiro único, partilhado com as regras B2C do mesmo projeto
-  Firebase. Manter uma segunda cópia aqui arriscava divergirem (uma cópia
-  desatualizada a ser confiada por engano). As regras relevantes para o B2B
-  (`marketplaces/{uid}`: `create` bloqueado ao cliente, `update` restrito a
-  `theme`/`allowedOrigins`) estão documentadas nos comentários de
-  `functions/b2b/registerCompany.js` e `functions/b2b/apiV1.js`.
-- Deploy real (`firebase deploy`) continua a correr a partir do checkout do
-  projeto Firebase principal (`nettuno-e6036`), não deste repositório
-  isoladamente.
+`firebase.json` + `.firebaserc` apontam para o projeto `nettuno-e6036` — o
+deploy de **functions** e **firestore rules** corre a partir daqui:
+
+```
+firebase deploy --only functions
+firebase deploy --only firestore:rules
+```
+
+`firebase.json` não tem secção `hosting` de propósito — `firebase deploy`
+(sem `--only`) nunca toca no hosting a partir daqui, mesmo por engano.
+
+**`firestore.rules` é uma cópia** do ficheiro único e partilhado do projeto
+Firebase (users/, votes/, ads/, config/... do B2C + marketplaces/... do B2B
+vivem todos no mesmo ficheiro, porque é o mesmo projeto Firestore). A cópia
+"fonte" histórica fica no `SCM-HUNTERS`, mas **este repositório é agora o
+sítio a partir de onde as rules são de facto publicadas** — se voltares a
+editar `marketplaces/{uid}` ou similares no `SCM-HUNTERS`, replica a mudança
+aqui antes de fazer deploy (ou vice-versa). Não há sincronização automática.
+
+**Hosting (dashboard em `/dashboard/...`, SDK em `/sdk/...`) fica de fora**
+deste `firebase.json` — decisão adiada. O `website/` original (site
+principal, privacy, help/support) só existe no `SCM-HUNTERS`, e um
+`firebase deploy --only hosting` a partir de qualquer um dos dois
+checkouts substitui TODO o conteúdo do hosting pelo que existir localmente
+nesse checkout — não faz merge entre os dois. Servir os dois em simultâneo
+sem um wipe acidental do site principal precisa de um Firebase Hosting
+"site"/target dedicado para o B2B, ou de trazer `website/dashboard` e `sdk/`
+de volta para o checkout do site principal só para efeitos de build/deploy.
+Ainda por decidir.
 
 ## Testes
 
